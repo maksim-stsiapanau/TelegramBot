@@ -5,6 +5,7 @@ import static ru.max.bot.BotHelper.adaEvents;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -517,6 +518,11 @@ public class DataBaseHelper {
 	 */
 	public String getAllEvents() {
 
+		// date of bithday
+		Calendar cal = Calendar.getInstance();
+
+		cal.set(2015, 8, 14);
+
 		StringBuilder result = new StringBuilder();
 
 		MongoCursor<Document> iterator = null;
@@ -532,11 +538,20 @@ public class DataBaseHelper {
 
 				Document doc = iterator.next();
 
-				result.append("\nEvent name: ")
-						.append(doc.get("event_name"))
-						.append("\nDate: ")
-						.append(this.sdf.format(new Date(doc
-								.getLong("event_date"))));
+				Date event = new Date(doc.getLong("event_date"));
+
+				long timeEvent = event.getTime();
+
+				long diff = timeEvent - cal.getTime().getTime();
+
+				long days = diff / (24 * 60 * 60 * 1000);
+
+				String eventDate = this.sdf.format(event);
+
+				result.append("\nEvent name: ").append(doc.get("event_name"))
+						.append("\nDate: ").append(eventDate).append("\nAge: ")
+						.append(days / 365).append(" year ").append(days / 30)
+						.append(" month  ").append(days % 30).append(" days").append("\n");
 
 			}
 

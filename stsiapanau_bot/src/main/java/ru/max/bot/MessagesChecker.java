@@ -127,6 +127,7 @@ public class MessagesChecker implements Runnable {
 
 											if (typeCommand
 													.equalsIgnoreCase("bot_command")) {
+												
 												switch (text) {
 
 												case "/rent_add": {
@@ -154,6 +155,7 @@ public class MessagesChecker implements Runnable {
 													break;
 
 												case "/start": {
+													
 													StringBuilder sb = new StringBuilder()
 															.append("Hi. I am bot. I can process next operations:\n")
 															.append("/rent - calculating rent per month\n");
@@ -168,6 +170,7 @@ public class MessagesChecker implements Runnable {
 													answer = sb.toString();
 												}
 													break;
+													
 												case "/getevents":
 
 													answer = DataBaseHelper
