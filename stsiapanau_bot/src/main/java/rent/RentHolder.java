@@ -18,161 +18,89 @@ import db.MonthSaver;
 public class RentHolder {
 
 	private final String chatId;
-
 	private final String owner;
-
 	private Long rentAmount;
-
 	private double T1Rate;
-
 	private double T2Rate;
-
 	private double T3Rate;
-
 	private double coldWaterRate;
-
 	private double hotWaterRate;
-
 	private double outFallRate;
-
 	private String monthRent;
-
 	private long countT1;
-
 	private long usedT1;
-
 	private double priceT1;
-
 	private long countT2;
-
 	private long usedT2;
-
 	private double priceT2;
-
 	private long countT3;
-
 	private long usedT3;
-
 	private double priceT3;
-
 	private long countColdWater;
-
 	private long usedColdWater;
-
 	private double priceColdWater;
-
 	private long countHotWater;
-
 	private long usedHotWater;
-
 	private double priceHotWater;
-
 	private long countOutFall;
-
 	private double priceOutFall;
-
 	private long lastT1Count;
-
 	private long lastT2Count;
-
 	private long lastT3Count;
-
 	private long lastColdWaterCount;
-
 	private long lastHotWaterCount;
-
 	private Double total;
-
 	private boolean setLight;
-
 	private boolean setWater;
-
 	private double takeout = 0.0;
-
 	private String takeoutDesc;
-
 	private RatesHolder rentConst;
 
 	public RentHolder(String chatId, String owner) {
-
 		this.chatId = chatId;
-
 		this.owner = owner;
-
 		this.setLight = false;
-
 		this.setWater = false;
-
 		this.rentConst = RatesHolder.getInstance(this.chatId);
-
 		this.rentAmount = this.rentConst.getRentAmount();
-
 		this.T1Rate = this.rentConst.getT1Rate();
-
 		this.T2Rate = this.rentConst.getT2Rate();
-
 		this.T3Rate = this.rentConst.getT3Rate();
-
 		this.coldWaterRate = this.rentConst.getColdWaterRate();
-
 		this.hotWaterRate = this.rentConst.getHotWaterRate();
-
 		this.outFallRate = this.rentConst.getOutfallRate();
-
 		this.lastColdWaterCount = this.rentConst.getLastColdWaterCount();
-
 		this.lastHotWaterCount = this.rentConst.getLastHotWaterCount();
-
 		this.lastT1Count = this.rentConst.getLastT1Count();
-
 		this.lastT2Count = this.rentConst.getLastT2Count();
-
 		this.lastT3Count = this.rentConst.getLastT3Count();
-
 	}
 
 	public Double getTotal(Boolean needOutfall) {
 
 		if (this.setLight && this.setWater && this.total == null) {
-
 			this.usedT1 = this.countT1 - this.lastT1Count;
-
 			this.priceT1 = this.usedT1 * this.T1Rate;
-
 			this.usedT2 = this.countT2 - this.lastT2Count;
-
 			this.priceT2 = this.usedT2 * this.T2Rate;
-
 			this.usedT3 = this.countT3 - this.lastT3Count;
-
 			this.priceT3 = this.usedT3 * this.T3Rate;
-
 			this.usedColdWater = this.countColdWater - this.lastColdWaterCount;
-
 			this.priceColdWater = this.usedColdWater * this.coldWaterRate;
-
 			this.usedHotWater = this.countHotWater - this.lastHotWaterCount;
-
 			this.priceHotWater = this.usedHotWater * this.hotWaterRate;
-
 			this.countOutFall = this.usedColdWater + this.usedHotWater;
-
 			this.priceOutFall = (null != needOutfall && needOutfall) ? (this.outFallRate * this.countOutFall)
 					: 0.0;
-
 			this.total = this.priceColdWater + this.priceHotWater
 					+ this.priceOutFall + this.priceT1 + this.priceT2
 					+ this.priceT3 + this.rentAmount - this.takeout;
 
 			// save month statistic to database
 			ExecutorService exs = Executors.newSingleThreadExecutor();
-
 			exs.execute(new MonthSaver(this));
-
 			exs.shutdown();
-
 		}
-
 		return this.total;
 	}
 
@@ -207,15 +135,11 @@ public class RentHolder {
 				.append(String.format("%.2f", this.total)).append(" rub");
 
 		if (this.takeout > 0) {
-
 			sb.append("\nTakeout: ")
 					.append(String.format("%.2f", this.takeout)).append(" rub")
 					.append("\nTakeout desc: ").append(this.takeoutDesc);
-
 		}
-
 		return sb.toString();
-
 	}
 
 	public long getRentAmount() {

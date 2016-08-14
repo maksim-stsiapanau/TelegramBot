@@ -17,78 +17,51 @@ import db.DataBaseHelper;
 public class RatesHolder {
 
 	private Long rentAmount;
-
 	private Double t1Rate;
-
 	private Double t2Rate;
-
 	private Double t3Rate;
-
 	private Double coldWaterRate;
-
 	private Double hotWaterRate;
-
 	private Double outfallRate;
-
 	private Long lastT1Count;
-
 	private Long lastT2Count;
-
 	private Long lastT3Count;
-
 	private Long lastColdWaterCount;
-
 	private Long lastHotWaterCount;
-
 	private final String chatId;
 
 	private RatesHolder(String chatId) {
-
 		this.chatId = chatId;
-
 		this.rentAmount = DataBaseHelper.getInstance()
 				.getFirstValue("rent_const", "rent_amount",
 						Filters.eq("id_chat", this.chatId));
-
 		this.t1Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
 				"t1_rate", Filters.eq("id_chat", this.chatId));
-
 		this.t2Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
 				"t2_rate", Filters.eq("id_chat", this.chatId));
-
 		this.t3Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
 				"t3_rate", Filters.eq("id_chat", this.chatId));
-
 		this.coldWaterRate = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "cw_rate", Filters.eq("id_chat", this.chatId));
-
 		this.hotWaterRate = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "hw_rate", Filters.eq("id_chat", this.chatId));
-
 		this.outfallRate = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "outfall_rate",
 				Filters.eq("id_chat", this.chatId));
-
 		this.lastT1Count = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "t1_last", Filters.eq("id_chat", this.chatId));
-
 		this.lastT2Count = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "t2_last", Filters.eq("id_chat", this.chatId));
-
 		this.lastT3Count = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "t3_last", Filters.eq("id_chat", this.chatId));
-
 		this.lastColdWaterCount = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "cw_last", Filters.eq("id_chat", this.chatId));
-
 		this.lastHotWaterCount = DataBaseHelper.getInstance().getFirstValue(
 				"rent_const", "hw_last", Filters.eq("id_chat", this.chatId));
 	}
 
 	public static RatesHolder getInstance(String chatId) {
-
 		return new RatesHolder(chatId);
-
 	}
 
 	public Long getRentAmount() {

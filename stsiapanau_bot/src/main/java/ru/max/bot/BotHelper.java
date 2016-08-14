@@ -27,13 +27,12 @@ public class BotHelper {
 
 	private static final Logger logger = LogManager.getLogger(BotHelper.class
 			.getName());
-
 	public static ConcurrentHashMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
-
 	public static ConcurrentHashMap<String, Boolean> adaMode = new ConcurrentHashMap<>();
-
+	public static ConcurrentHashMap<String, Boolean> editAdaEvent = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> adaEvents = new ConcurrentHashMap<>();
-
+	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
+	
 	private BotHelper() {
 
 	}
@@ -41,15 +40,11 @@ public class BotHelper {
 	public static Optional<String> callApiGet(String method, String url) {
 
 		Optional<String> result = Optional.ofNullable(null);
-
 		BufferedReader in = null;
-
 		URL obj;
 
 		try {
-
 			obj = new URL(url + method);
-
 			HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
 
 			// optional default is GET
@@ -59,38 +54,24 @@ public class BotHelper {
 			int responseCode = con.getResponseCode();
 
 			if (responseCode == 200) {
-
 				in = new BufferedReader(new InputStreamReader(
 						con.getInputStream()));
-
 				String inputLine;
-
 				StringBuffer response = new StringBuffer();
 
 				while ((inputLine = in.readLine()) != null) {
-
 					response.append(inputLine);
-
 				}
 
 				result = Optional.of(response.toString());
-
 			}
-
 		} catch (Exception e) {
-
 			logger.error(e.getMessage(), e);
-
 		} finally {
-
 			if (null != in) {
-
 				try {
-
 					in.close();
-
 				} catch (IOException e) {
-
 					logger.error(e.getMessage(), e);
 				}
 			}
@@ -111,18 +92,12 @@ public class BotHelper {
 	public static boolean checkStrByRegexp(String text, String reqExp) {
 
 		boolean result = false;
-
 		Pattern p = Pattern.compile(reqExp);
-
 		Matcher m = p.matcher(text);
 
 		if (m.find()) {
-
 			result = true;
-
 		}
-
 		return result;
 	}
-
 }

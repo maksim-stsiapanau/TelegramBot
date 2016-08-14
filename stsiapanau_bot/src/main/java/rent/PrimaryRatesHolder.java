@@ -14,93 +14,52 @@ import org.apache.commons.lang.builder.ToStringStyle;
 public class PrimaryRatesHolder {
 
 	private final long t1Start;
-
 	private final long t2Start;
-
 	private final long t3Start;
-
 	private final long hwStart;
-
 	private final long cwStart;
-
 	private final double t1Rate;
-
 	private final double t2Rate;
-
 	private final double t3Rate;
-
 	private final double hwRate;
-
 	private final double cwRate;
-
 	private final double outFallRate;
-
 	private final long rentAmount;
-	
 	private final String idChat;
-
 	private final String owner;
 
 	public PrimaryRatesHolder(Builder builder) {
-
 		this.t1Start = builder.t1Start;
-
 		this.t2Start = builder.t2Start;
-
 		this.t3Start = builder.t3Start;
-
 		this.t1Rate = builder.t1Rate;
-
 		this.t2Rate = builder.t2Rate;
-
 		this.t3Rate = builder.t3Rate;
-
 		this.hwRate = builder.hwRate;
-
 		this.hwStart = builder.hwStart;
-
 		this.cwRate = builder.cwRate;
-
 		this.cwStart = builder.cwStart;
-
 		this.outFallRate = builder.outFallRate;
-
 		this.rentAmount = builder.rentAmount;
-		
 		this.idChat = builder.idChat;
-		
 		this.owner = builder.owner;
-
 	}
 
 	public static class Builder {
 
 		public long t1Start;
-
 		public long t2Start;
-
 		public long t3Start;
-
 		public long hwStart;
-
 		public long cwStart;
-
 		public double t1Rate;
-
 		public double t2Rate;
-
 		public double t3Rate;
-
 		public double hwRate;
-
 		public double cwRate;
-
 		public double outFallRate;
-
 		public long rentAmount;
-
 		public String idChat;
-
 		public String owner;
 
 		public Builder() {

@@ -35,32 +35,22 @@ import com.mongodb.client.result.DeleteResult;
 public class DataBaseHelper {
 
 	private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-
 	private static final Logger logger = LogManager
 			.getFormatterLogger(DataBaseHelper.class.getName());
-
 	private MongoClient mongoCl;
-
 	private MongoDatabase db;
 
 	private DataBaseHelper() {
-
 		this.mongoCl = new MongoClient();
-
 		this.db = this.mongoCl.getDatabase("telegram_bot");
-
 	}
 
 	public static DataBaseHelper getInstance() {
-
 		return LazyDbHolder.instance;
-
 	}
 
 	public void closeMongoClient() {
-
 		this.mongoCl.close();
-
 	}
 
 	@SuppressWarnings("unchecked")
@@ -71,11 +61,10 @@ public class DataBaseHelper {
 		Optional<Document> doc = Optional.ofNullable(this.db
 				.getCollection(collection).find(bson).first());
 
-		if (doc.isPresent())
+		if (doc.isPresent()) {
 			result = (T) doc.get().get(field);
-
+		}
 		return result;
-
 	}
 
 	/**
@@ -94,12 +83,10 @@ public class DataBaseHelper {
 
 		Optional<T> doc = (Optional<T>) Optional.ofNullable(this.db
 				.getCollection(collection).find(bson).first());
-
-		if (doc.isPresent())
+		if (doc.isPresent()) {
 			result = (T) doc.get();
-
+		}
 		return result;
-
 	}
 
 	/**
@@ -113,13 +100,10 @@ public class DataBaseHelper {
 		StringBuilder sb = new StringBuilder();
 
 		try {
-
 			Optional<Document> document = Optional.of(this.db
 					.getCollection("rent_const")
 					.find(Filters.eq("id_chat", chatId)).first());
-
 			document.ifPresent(doc -> {
-
 				sb.append("Rates:\n").append("Rent amount: ")
 						.append(doc.get("rent_amount")).append(" rub.")
 						.append("\nT1: ").append(doc.get("t1_rate"))
@@ -131,17 +115,11 @@ public class DataBaseHelper {
 						.append("\nCold water: ").append(doc.get("cw_rate"))
 						.append(" rub.").append("\nOutfall: ")
 						.append(doc.get("outfall_rate")).append(" rub.");
-
 			});
-
 		} catch (Exception e) {
-
 			logger.error("Can't get rates month! Error: %s", e.getMessage(), e);
-
 		}
-
 		return sb.toString();
-
 	}
 
 	/**
@@ -157,15 +135,12 @@ public class DataBaseHelper {
 		StringBuilder sb = new StringBuilder();
 
 		try {
-
 			Optional<Document> document = Optional.ofNullable(DataBaseHelper
 					.getInstance().getFirstDocByFilter(
 							"rent_stat",
 							Filters.and(Filters.eq("month", month),
 									Filters.eq("id_chat", idChat))));
-
 			document.ifPresent(doc -> {
-
 				sb.append("Added by: ")
 						.append(doc.get("who_set"))
 						.append("\nMonth: ")
@@ -231,36 +206,24 @@ public class DataBaseHelper {
 						.append(" rub");
 
 				try {
-
 					double takeout = Double.parseDouble(String.valueOf(doc
 							.get("takeout")));
-
 					if (takeout > 0) {
-
 						sb.append("\nTakeout: ").append(takeout).append(" rub")
 								.append("\nTakeout desc: ")
 								.append(doc.get("takeout_desc"));
-
 					}
-
 				} catch (Exception e) {
-
 					logger.error("Can't get takeout! Error: %s",
 							e.getMessage(), e);
 				}
-
 			});
-
 		} catch (Exception e) {
-
 			logger.error("Can't get stat by month! Error: %s", e.getMessage(),
 					e);
-
 			logger.error("Month: %s;", month);
 		}
-
 		return sb.toString();
-
 	}
 
 	/**
@@ -275,42 +238,52 @@ public class DataBaseHelper {
 		MongoCursor<Document> iter = null;
 
 		try {
-
 			FindIterable<Document> docs = this.db.getCollection("rent_stat")
 					.find(Filters.eq("id_chat", chatId));
-
 			iter = docs.iterator();
-
 			while (iter.hasNext()) {
-
 				Document document = iter.next();
-
 				sb.append("\nMonth: ").append(document.get("month"))
 						.append("; Total: ")
 						.append(document.get("total_amount")).append(" rub.");
-
 			}
-
 		} catch (Exception e) {
-
 			logger.error("Can't get history! Error: %s", e.getMessage(), e);
-
 		} finally {
-
 			try {
-
 				if (null != iter)
 					iter.close();
-
 			} catch (Exception e) {
-
 				logger.error(e.getMessage(), e);
 			}
-
 		}
-
 		return sb.toString();
+	}
 
+	/**
+	 * Delete statistics by month
+	 * 
+	 * @param idChat
+	 *            - unique chat id
+	 * @param month
+	 *            - month for deleting
+	 * @return statuse execute true or false
+	 */
+	public boolean deleteMothStat(String idChat, String month) {
+
+		boolean status = true;
+
+		try {
+			DeleteResult dr = this.db.getCollection("rent_stat").deleteOne(
+					Filters.and(Filters.eq("id_chat", idChat),
+							Filters.eq("month", month)));
+			logger.debug("Month %s deleted successfully! Row deleted %s",
+					month, dr.getDeletedCount());
+		} catch (Exception e) {
+			status = false;
+			logger.error("Can't purge statistics! Error: %s", e.getMessage(), e);
+		}
+		return status;
 	}
 
 	/**
@@ -325,29 +298,50 @@ public class DataBaseHelper {
 		boolean status = true;
 
 		try {
-
 			this.db.getCollection("rent_const").deleteMany(
 					Filters.eq("id_chat", chatId));
-
 			logger.debug(
 					"Primary values of chat with id %s deleted successfully!",
 					chatId);
-
 			DeleteResult dr = this.db.getCollection("rent_stat").deleteMany(
 					Filters.eq("id_chat", chatId));
-
 			logger.debug("Months deleted: %s", dr.getDeletedCount());
-
 		} catch (Exception e) {
-
 			status = false;
-
 			logger.error("Can't purge statistics! Error: %s", e.getMessage(), e);
+		}
+		return status;
+	}
 
+	/**
+	 * 
+	 * Update rates
+	 * @param <T>
+	 * 
+	 * @param idChat
+	 *            - unique chat id
+	 * @param field
+	 *            - field for update
+	 * @param value
+	 *            - new value
+	 * @return status execute true or false
+	 */
+	public <T> boolean updateRate(String idChat, String field, T value) {
+
+		boolean status = true;
+
+		try {
+			this.db.getCollection("rent_const").updateOne(
+					this.db.getCollection("rent_const")
+							.find(Filters.eq("id_chat", idChat)).first(),
+					new Document("$set", new Document(field, value)));
+		} catch (Exception e) {
+			status = false;
+			logger.error("Can't update %s rate! Error: %s", field,
+					e.getMessage(), e);
 		}
 
 		return status;
-
 	}
 
 	/**
@@ -362,37 +356,25 @@ public class DataBaseHelper {
 		boolean status = true;
 
 		try {
-
 			Optional<Document> rates = Optional.ofNullable(this.db
 					.getCollection("rent_const")
 					.find(Filters.eq("id_chat", r.getIdChat())).first());
-
 			if (rates.isPresent()) {
-
 				DeleteResult dr = this.db.getCollection("rent_const")
 						.deleteMany(Filters.eq("id_chat", r.getIdChat()));
-
 				logger.debug("Count deleted rows for chat with id %s: %s",
 						r.getIdChat(), dr.getDeletedCount());
-
 			} else {
-
 				logger.debug("New client!");
 			}
-
 		} catch (Exception e) {
-
 			status = false;
-
 			logger.error("Can't delete primaty indications! Error: %s",
 					e.getMessage(), e);
-
 		}
 
 		if (status) {
-
 			try {
-
 				this.db.getCollection("rent_const").insertOne(
 						new Document("rent_amount", r.getRentAmount())
 								.append("t1_start", r.getT1Start())
@@ -412,22 +394,14 @@ public class DataBaseHelper {
 								.append("cw_rate", r.getCwRate())
 								.append("outfall_rate", r.getOutFallRate())
 								.append("id_chat", r.getIdChat())
-								.append("owner", r.getOwner())
-
-				);
-
+								.append("owner", r.getOwner()));
 			} catch (Exception e) {
-
 				status = false;
-
 				logger.error("Can't insert primary values! Error: %s",
 						e.getMessage(), e);
 			}
-
 		}
-
 		return status;
-
 	}
 
 	/**
@@ -443,7 +417,6 @@ public class DataBaseHelper {
 		boolean status = true;
 
 		try {
-
 			this.db.getCollection("rent_stat").insertOne(
 					new Document("month", rh.getMonthRent())
 							.append("t1_indication", rh.getCountT1())
@@ -477,17 +450,13 @@ public class DataBaseHelper {
 							.append("takeout_desc", rh.getTakeoutDesc())
 							.append("id_chat", rh.getIdChat())
 							.append("who_set", rh.getOwner()));
-
 		} catch (Exception e) {
-
 			status = false;
-
 			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
 					e);
 		}
 
 		try {
-
 			this.db.getCollection("rent_const").updateOne(
 					this.db.getCollection("rent_const")
 							.find(Filters.eq("id_chat", rh.getIdChat()))
@@ -497,17 +466,12 @@ public class DataBaseHelper {
 							.append("t3_last", rh.getCountT3())
 							.append("hw_last", rh.getCountHotWater())
 							.append("cw_last", rh.getCountColdWater())));
-
 		} catch (Exception e) {
-
 			status = false;
-
 			logger.error("Can't update last indications! Error: %s",
 					e.getMessage(), e);
 		}
-
 		return status;
-
 	}
 
 	/**
@@ -528,51 +492,32 @@ public class DataBaseHelper {
 		MongoCursor<Document> iterator = null;
 
 		try {
-
 			FindIterable<Document> iter = this.db.getCollection("ada_events")
 					.find().sort(Filters.eq("event_date", 1));
-
 			iterator = iter.iterator();
-
 			while (iterator.hasNext()) {
-
 				Document doc = iterator.next();
-
 				Date event = new Date(doc.getLong("event_date"));
-
 				long timeEvent = event.getTime();
-
 				long diff = timeEvent - cal.getTime().getTime();
-
 				long days = diff / (24 * 60 * 60 * 1000);
-
 				String eventDate = this.sdf.format(event);
-
-				result.append("\nEvent name: ").append(doc.get("event_name"))
+				result.append("\nEvent desc: ").append(doc.get("event_name"))
 						.append("\nDate: ").append(eventDate).append("\nAge: ")
 						.append(days / 365).append(" year ").append(days / 30)
-						.append(" month  ").append(days % 30).append(" days").append("\n");
-
+						.append(" month  ").append(days % 30).append(" days")
+						.append("\n");
 			}
-
 		} catch (Exception e) {
-
 			logger.error(e.getMessage(), e);
-
 		} finally {
-
 			try {
-
 				if (null != iterator)
 					iterator.close();
-
 			} catch (Exception e) {
-
 				logger.error(e.getMessage(), e);
 			}
-
 		}
-
 		return result.toString();
 	}
 
@@ -608,25 +553,25 @@ public class DataBaseHelper {
 	 * 
 	 * Remove event by name
 	 * 
-	 * @param event
+	 * @param eventDate
 	 *            Ada's event
 	 * @return
 	 */
-	public boolean deleteAdaEvent(String event) {
+	public boolean deleteAdaEvent(String eventDate) {
 
 		boolean status = true;
 
 		try {
 
 			this.db.getCollection("ada_events").deleteOne(
-					Filters.eq("event_name", event));
+					Filters.eq("event_date", eventDate));
 
 		} catch (Exception e) {
 
 			status = false;
 
-			logger.error("Can't delete event %s! Error: %s", event,
-					e.getMessage(), e);
+			logger.error("Can't delete event for date %s! Error: %s",
+					eventDate, e.getMessage(), e);
 		}
 
 		return status;
@@ -652,7 +597,7 @@ public class DataBaseHelper {
 
 		while (!events.isEmpty()) {
 
-			String eventName = events.poll();
+			String eventDesc = events.poll();
 
 			String eventDate = events.poll();
 
@@ -671,11 +616,11 @@ public class DataBaseHelper {
 				logger.error(e.getMessage(), e);
 			}
 
-			sb.append("\nName: ").append(eventName).append("\nDate: ")
+			sb.append("\nDesc: ").append(eventDesc).append("\nDate: ")
 					.append(eventDate);
 
 			eventList.add(new Document("chat_id", chatId)
-					.append("author", author).append("event_name", eventName)
+					.append("author", author).append("event_name", eventDesc)
 					.append("event_date", time));
 
 		}
