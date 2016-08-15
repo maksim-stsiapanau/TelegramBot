@@ -12,24 +12,16 @@ import org.apache.commons.lang.builder.ToStringStyle;
 public class EventHolder {
 
 	public final String eventName;
-
 	public final String description;
-
 	public final int chatId;
-
 	public final String author;
 
 	public EventHolder(String eventName, String description, int chatId,
 			String author) {
-
 		this.eventName = eventName;
-
 		this.description = description;
-
 		this.chatId = chatId;
-
 		this.author = author;
-
 	}
 
 	public String getEventName() {

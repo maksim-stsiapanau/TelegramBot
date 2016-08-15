@@ -24,7 +24,9 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 
 /**
  * Database operations
@@ -272,6 +274,24 @@ public class DataBaseHelper {
 	public boolean deleteMothStat(String idChat, String month) {
 
 		boolean status = true;
+		boolean isLastRecord = false;
+
+		// check on last added record
+		try {
+			Optional<Document> lastRecord = Optional.ofNullable(this.db
+					.getCollection("rent_stat").find().limit(1)
+					.sort(Sorts.descending("$natural", "-1")).first());
+			if (lastRecord.isPresent()) {
+				String lastMonthAdded = lastRecord.get().getString("month");
+
+				if (lastMonthAdded.toLowerCase().equalsIgnoreCase(month)) {
+					isLastRecord = true;
+				}
+			}
+		} catch (Exception e) {
+			status = false;
+			logger.error(e.getMessage(), e);
+		}
 
 		try {
 			DeleteResult dr = this.db.getCollection("rent_stat").deleteOne(
@@ -279,6 +299,51 @@ public class DataBaseHelper {
 							Filters.eq("month", month)));
 			logger.debug("Month %s deleted successfully! Row deleted %s",
 					month, dr.getDeletedCount());
+
+			if (isLastRecord) {
+				Optional<Document> lastRecord = Optional.ofNullable(this.db
+						.getCollection("rent_stat").find().limit(1)
+						.sort(Sorts.descending("$natural", "-1")).first());
+
+				if (lastRecord.isPresent()) {
+					logger.debug("Last record detected!");
+					try {
+						this.db.getCollection("rent_const")
+								.updateOne(
+										this.db.getCollection("rent_const")
+												.find(Filters.eq("id_chat",
+														idChat)).first(),
+										new Document(
+												"$set",
+												new Document(
+														"t1_last",
+														lastRecord
+																.get()
+																.get("t1_indication"))
+														.append("t2_last",
+																lastRecord
+																		.get()
+																		.get("t2_indication"))
+														.append("t3_last",
+																lastRecord
+																		.get()
+																		.get("t3_indication"))
+														.append("hw_last",
+																lastRecord
+																		.get()
+																		.get("hot_water_indication"))
+														.append("cw_last",
+																lastRecord
+																		.get()
+																		.get("cold_water_indication"))));
+					} catch (Exception e) {
+						logger.error(
+								"Can't update last indications! Error: %s",
+								e.getMessage(), e);
+					}
+				}
+
+			}
 		} catch (Exception e) {
 			status = false;
 			logger.error("Can't purge statistics! Error: %s", e.getMessage(), e);
@@ -316,6 +381,7 @@ public class DataBaseHelper {
 	/**
 	 * 
 	 * Update rates
+	 * 
 	 * @param <T>
 	 * 
 	 * @param idChat

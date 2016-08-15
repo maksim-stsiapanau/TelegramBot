@@ -13,16 +13,12 @@ public class MonthSaver implements Runnable {
 	private final RentHolder rh;
 
 	public MonthSaver(RentHolder rh) {
-
 		this.rh = rh;
-
 	}
 
 	@Override
 	public void run() {
 
 		DataBaseHelper.getInstance().insertMonthStat(this.rh);
-
 	}
-
 }
