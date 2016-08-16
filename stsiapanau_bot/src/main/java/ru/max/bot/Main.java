@@ -1,5 +1,6 @@
 package ru.max.bot;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -7,6 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import db.DataBaseHelper;
 
@@ -19,7 +23,8 @@ public class Main {
 	private static final Logger logger = LogManager.getLogger(Main.class
 			.getName());
 
-	public static void main(String[] args) throws ParseException {
+	public static void main(String[] args) throws ParseException,
+			JsonParseException, JsonMappingException, IOException {
 
 		StringBuilder sb = new StringBuilder();
 
