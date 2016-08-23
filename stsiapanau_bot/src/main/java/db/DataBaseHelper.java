@@ -5,7 +5,6 @@ import static ru.max.bot.BotHelper.adaEvents;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +14,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.PeriodFormat;
 
 import rent.PrimaryRatesHolder;
 import rent.RentHolder;
@@ -36,6 +40,8 @@ import com.mongodb.client.result.DeleteResult;
 public class DataBaseHelper {
 
 	private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+	private final DateTimeFormatter fmt = DateTimeFormat
+			.forPattern("dd.MM.yyyy");
 	private static final Logger logger = LogManager
 			.getFormatterLogger(DataBaseHelper.class.getName());
 	private MongoClient mongoCl;
@@ -543,9 +549,7 @@ public class DataBaseHelper {
 	public String getAllEvents() {
 
 		// date of bithday
-		Calendar cal = Calendar.getInstance();
-
-		cal.set(2015, 8, 14);
+		DateTime dob = new DateTime(2015, 9, 14, 0, 0, 0, 0);
 
 		StringBuilder result = new StringBuilder();
 
@@ -557,15 +561,12 @@ public class DataBaseHelper {
 			iterator = iter.iterator();
 			while (iterator.hasNext()) {
 				Document doc = iterator.next();
-				Date event = new Date(doc.getLong("event_date"));
-				long timeEvent = event.getTime();
-				long diff = timeEvent - cal.getTime().getTime();
-				long days = diff / (24 * 60 * 60 * 1000);
-				String eventDate = this.sdf.format(event);
+				DateTime event = new DateTime(doc.getLong("event_date"));
+				Period period = new Period(dob, event);
 				result.append("\nEvent desc: ").append(doc.get("event_name"))
-						.append("\nDate: ").append(eventDate).append("\nAge: ")
-						.append(days / 365).append(" year ").append(days / 30)
-						.append(" month  ").append(days % 30).append(" days")
+						.append("\nDate: ").append(this.fmt.print(event))
+						.append("\nAge: ")
+						.append(PeriodFormat.getDefault().print(period))
 						.append("\n");
 			}
 		} catch (Exception e) {
