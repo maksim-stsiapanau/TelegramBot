@@ -62,7 +62,6 @@ public class BotHelper {
 				while ((inputLine = in.readLine()) != null) {
 					response.append(inputLine);
 				}
-
 				result = Optional.of(response.toString());
 			}
 		} catch (Exception e) {

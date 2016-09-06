@@ -594,20 +594,14 @@ public class DataBaseHelper {
 		long countDeleted = 0;
 
 		try {
-
 			countDeleted = this.db.getCollection("ada_events")
 					.deleteMany(new Document()).getDeletedCount();
-
 		} catch (Exception e) {
-
 			countDeleted = -1;
-
 			logger.error("Can't delete all events! Error: %s", e.getMessage(),
 					e);
 		}
-
 		return countDeleted;
-
 	}
 
 	/**
@@ -623,20 +617,14 @@ public class DataBaseHelper {
 		boolean status = true;
 
 		try {
-
 			this.db.getCollection("ada_events").deleteOne(
 					Filters.eq("event_date", eventDate));
-
 		} catch (Exception e) {
-
 			status = false;
-
 			logger.error("Can't delete event for date %s! Error: %s",
 					eventDate, e.getMessage(), e);
 		}
-
 		return status;
-
 	}
 
 	/**
@@ -649,59 +637,39 @@ public class DataBaseHelper {
 	public Optional<String> saveAdaEvents(String chatId, String author) {
 
 		StringBuilder sb = new StringBuilder();
-
 		Optional<String> eventsMessage;
-
 		ConcurrentLinkedQueue<String> events = adaEvents.get(chatId);
-
 		List<Document> eventList = new ArrayList<>();
 
 		while (!events.isEmpty()) {
-
 			String eventDesc = events.poll();
-
 			String eventDate = events.poll();
-
 			Date d = null;
-
 			long time = 0;
 
 			try {
-
 				d = this.sdf.parse(eventDate);
-
 				time = d.getTime();
-
 			} catch (ParseException e) {
-
 				logger.error(e.getMessage(), e);
 			}
 
 			sb.append("\nDesc: ").append(eventDesc).append("\nDate: ")
 					.append(eventDate);
-
 			eventList.add(new Document("chat_id", chatId)
 					.append("author", author).append("event_name", eventDesc)
 					.append("event_date", time));
-
 		}
 
 		try {
-
 			this.db.getCollection("ada_events").insertMany(eventList);
-
 			eventsMessage = Optional.of(sb.toString());
-
 		} catch (Exception e) {
-
 			eventsMessage = Optional.ofNullable(null);
-
 			logger.error("Can't insert Ada's events! Error: %s",
 					e.getMessage(), e);
 		}
-
 		return eventsMessage;
-
 	}
 
 	/**
@@ -714,19 +682,47 @@ public class DataBaseHelper {
 		Optional<String> result = Optional.empty();
 
 		try {
-
 			result = Optional.ofNullable(this.db.getCollection("bot_data")
 					.find(Filters.eq("type", "telegram_api")).first()
 					.getString("token"));
-
 		} catch (Exception e) {
-
 			logger.error("Can't get token! Error: %s", e.getMessage(), e);
-
 		}
-
 		return result;
 
+	}
+
+	/**
+	 * Return paid months for the rent
+	 * 
+	 * @param chatId - chat id
+	 * @return List<String> with paid months
+	 */
+	public List<String> getPaidRentMonths(String chatId) {
+
+		List<String> months = new ArrayList<>();
+		MongoCursor<Document> iterator = null;
+
+		try {
+			FindIterable<Document> iter = this.db.getCollection("rent_stat")
+					.find(Filters.eq("id_chat", chatId));
+			iterator = iter.iterator();
+			while (iterator.hasNext()) {
+				Document doc = iterator.next();
+				months.add(doc.getString("month"));
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		} finally {
+			try {
+				if (null != iterator)
+					iterator.close();
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+
+		return months;
 	}
 
 	private static class LazyDbHolder {
