@@ -8,7 +8,6 @@ public class ResponseHolder {
 	private String chatId;
 	
 	public ResponseHolder() {
-
 	}
 
 	public String getResponseMessage() {

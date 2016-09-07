@@ -1,11 +1,11 @@
 package ru.max.bot;
 
 import static ru.max.bot.BotHelper.activeCommand;
-import static ru.max.bot.BotHelper.commandMapper;
 import static ru.max.bot.BotHelper.adaEvents;
 import static ru.max.bot.BotHelper.adaMode;
 import static ru.max.bot.BotHelper.callApiGet;
 import static ru.max.bot.BotHelper.checkStrByRegexp;
+import static ru.max.bot.BotHelper.commandMapper;
 import static ru.max.bot.BotHelper.rentData;
 import jackson.bot.message.Chat;
 import jackson.bot.message.Entity;

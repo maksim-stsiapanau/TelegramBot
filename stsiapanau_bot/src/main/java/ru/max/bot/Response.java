@@ -9,7 +9,6 @@ public class Response {
 	private Integer maxUpdateId;
 	
 	public Response() {
-		// TODO Auto-generated constructor stub
 	}
 
 	public List<ResponseHolder> getResponses() {
