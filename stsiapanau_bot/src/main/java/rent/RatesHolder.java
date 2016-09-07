@@ -2,6 +2,7 @@ package rent;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.bson.Document;
 
 import com.mongodb.client.model.Filters;
 
@@ -32,32 +33,22 @@ public class RatesHolder {
 
 	private RatesHolder(String chatId) {
 		this.chatId = chatId;
-		this.rentAmount = DataBaseHelper.getInstance()
-				.getFirstValue("rent_const", "rent_amount",
-						Filters.eq("id_chat", this.chatId));
-		this.t1Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
-				"t1_rate", Filters.eq("id_chat", this.chatId));
-		this.t2Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
-				"t2_rate", Filters.eq("id_chat", this.chatId));
-		this.t3Rate = DataBaseHelper.getInstance().getFirstValue("rent_const",
-				"t3_rate", Filters.eq("id_chat", this.chatId));
-		this.coldWaterRate = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "cw_rate", Filters.eq("id_chat", this.chatId));
-		this.hotWaterRate = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "hw_rate", Filters.eq("id_chat", this.chatId));
-		this.outfallRate = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "outfall_rate",
-				Filters.eq("id_chat", this.chatId));
-		this.lastT1Count = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "t1_last", Filters.eq("id_chat", this.chatId));
-		this.lastT2Count = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "t2_last", Filters.eq("id_chat", this.chatId));
-		this.lastT3Count = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "t3_last", Filters.eq("id_chat", this.chatId));
-		this.lastColdWaterCount = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "cw_last", Filters.eq("id_chat", this.chatId));
-		this.lastHotWaterCount = DataBaseHelper.getInstance().getFirstValue(
-				"rent_const", "hw_last", Filters.eq("id_chat", this.chatId));
+
+		Document doc = DataBaseHelper.getInstance().getFirstDocByFilter(
+				"rent_const", Filters.eq("id_chat", this.chatId));
+
+		this.rentAmount = doc.getLong("rent_amount");
+		this.t1Rate = doc.getDouble("t1_rate");
+		this.t2Rate = doc.getDouble("t2_rate");
+		this.t3Rate = doc.getDouble("t3_rate");
+		this.coldWaterRate = doc.getDouble("cw_rate");
+		this.hotWaterRate = doc.getDouble("hw_rate");
+		this.outfallRate = doc.getDouble("outfall_rate");
+		this.lastT1Count = doc.getLong("t1_last");
+		this.lastT2Count = doc.getLong("t2_last");
+		this.lastT3Count = doc.getLong("t3_last");
+		this.lastColdWaterCount = doc.getLong("cw_last");
+		this.lastHotWaterCount = doc.getLong("hw_last");
 	}
 
 	public static RatesHolder getInstance(String chatId) {

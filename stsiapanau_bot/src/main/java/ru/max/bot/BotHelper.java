@@ -32,7 +32,40 @@ public class BotHelper {
 	public static ConcurrentHashMap<String, Boolean> editAdaEvent = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> adaEvents = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
-	
+	public static ConcurrentHashMap<String, String> commandMapper = new ConcurrentHashMap<>();
+
+	static {
+		commandMapper.put("rent", "/rent");
+		commandMapper.put("back to rent menu", "/rent");
+		commandMapper.put("calc", "/calc");
+		commandMapper.put("save", "/save");
+		commandMapper.put("ada", "/ada");
+		commandMapper.put("back to ada menu", "/ada");
+		commandMapper.put("menu", "/start");
+		commandMapper.put("payments", "/gethistory");
+		commandMapper.put("rates", "/getrates");
+		commandMapper.put("change rates", "/changerates");
+		commandMapper.put("add month", "/rent_add");
+		commandMapper.put("new primary counters", "/setprimarycounters");
+		commandMapper.put("month", "/setmonth");
+		commandMapper.put("light", "/setlight");
+		commandMapper.put("water", "/setwater");
+		commandMapper.put("takeout", "/settakeout");
+		commandMapper.put("details", "/getstatbymonth");
+		commandMapper.put("clear all", "/purge");
+		commandMapper.put("remove payment", "/delmonthstat");
+		commandMapper.put("added statistics", "/getstat");
+		commandMapper.put("add events", "/setevents");
+		commandMapper.put("see events", "/getevents");
+		commandMapper.put("remove all events", "/delall");
+		commandMapper.put("remove event", "/delone");
+		commandMapper.put("hot water", "/changehotwaterrate");
+		commandMapper.put("cold water", "/changecoldwaterrate");
+		commandMapper.put("outfall", "/changeoutfallrate");
+		commandMapper.put("light rate", "/changelightrate");
+		commandMapper.put("rent amount", "/changerentamount");
+	}
+
 	private BotHelper() {
 
 	}

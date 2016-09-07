@@ -1,6 +1,7 @@
 package ru.max.bot;
 
 import static ru.max.bot.BotHelper.activeCommand;
+import static ru.max.bot.BotHelper.commandMapper;
 import static ru.max.bot.BotHelper.adaEvents;
 import static ru.max.bot.BotHelper.adaMode;
 import static ru.max.bot.BotHelper.callApiGet;
@@ -156,9 +157,16 @@ public class MessagesChecker implements Runnable {
 						text = messageObj.get().getText();
 						text = text.trim().toLowerCase();
 
+						boolean isMapper = commandMapper.containsKey(text);
+
 						String answer = "I can't answer at this question(";
 
-						if (typeCommand.equalsIgnoreCase("bot_command")) {
+						if (typeCommand.equalsIgnoreCase("bot_command")
+								|| isMapper) {
+
+							if (isMapper) {
+								text = commandMapper.get(text);
+							}
 
 							// remove old command
 							activeCommand.remove(id);
@@ -172,16 +180,16 @@ public class MessagesChecker implements Runnable {
 
 								List<String> buttonNames = new ArrayList<>();
 								buttons.add(buttonNames);
-								buttonNames.add("/rent");
+								buttonNames.add("Rent");
 
 								StringBuilder sb = new StringBuilder()
 										.append("Hi. I am bot. I can process next operations:\n")
-										.append("/rent - calculating rent per month\n");
+										.append("/rent (Rent) - calculating rent per month\n");
 
 								if (owner.equalsIgnoreCase("Maksim Stepanov")
 										|| owner.equalsIgnoreCase("Yuliya Stepanova")) {
-									sb.append("/ada -  events from Ada's life");
-									buttonNames.add("/ada");
+									sb.append("/ada (Ada) -  events from Ada's life");
+									buttonNames.add("Ada");
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -209,17 +217,17 @@ public class MessagesChecker implements Runnable {
 									buttons.add(buttonNames);
 									switch (i) {
 									case 0: {
-										buttonNames.add("/setevents");
-										buttonNames.add("/getevents");
+										buttonNames.add("Add events");
+										buttonNames.add("See events");
 									}
 										break;
 									case 1: {
-										buttonNames.add("/delone");
-										buttonNames.add("/delall");
+										buttonNames.add("Remove event");
+										buttonNames.add("Remove all events");
 									}
 										break;
 									case 2: {
-										buttonNames.add("/start");
+										buttonNames.add("Menu");
 									}
 										break;
 									default:
@@ -233,11 +241,11 @@ public class MessagesChecker implements Runnable {
 
 								answer = new StringBuilder()
 										.append("You can get or set events related with our Ada by sending these commands:\n")
-										.append("/setevents - activate adding event mode. After you must send two simple messages: 1- description; 2- date of event and etc.\n")
-										.append("/save - saved all added events\n")
-										.append("/delone - remove event by date\n")
-										.append("/delall - removed all events related with our Ada\n")
-										.append("/getevents - get all events related with our Ada")
+										.append("/setevents (Add events) - activate adding event mode. After you must send two simple messages: 1- description; 2- date of event and etc.\n")
+										.append("/save (Save) - saved all added events\n")
+										.append("/getevents (See events) - get all events related with our Ada")
+										.append("/delone (Remove event) - remove event by date\n")
+										.append("/delall (Remove all events) - removed all events related with our Ada\n")
 										.toString();
 							}
 								break;
@@ -252,8 +260,8 @@ public class MessagesChecker implements Runnable {
 							case "/save": {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = new ArrayList<>();
-								buttonNames.add("/ada");
-								buttonNames.add("/start");
+								buttonNames.add("Back to Ada menu");
+								buttonNames.add("Menu");
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
@@ -281,7 +289,7 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = new ArrayList<>();
 								buttons.add(buttonNames);
-								buttonNames.add("/save");
+								buttonNames.add("Save");
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
@@ -293,38 +301,59 @@ public class MessagesChecker implements Runnable {
 								answer = "Add mode activated successfully! I'm ready to get events)";
 							}
 								break;
-							case "/delone":
-								answer = "OK. Send simple message with event date for deleting.\n Before using this command recommend check events via /getevents command.\nPlease use this format:\n\ndd.mm.yyyy\nExample:17.08.2016";
+							case "/delone": {
+								List<List<String>> buttons = new ArrayList<>();
+
+								DataBaseHelper
+										.getInstance()
+										.getAllEventsDates(id)
+										.stream()
+										.forEach(
+												e -> {
+													List<String> buttonNames = new ArrayList<>();
+													buttons.add(buttonNames);
+													buttonNames.add(e);
+												});
+
+								if (buttons.size() > 0) {
+									List<String> buttonNames = new ArrayList<>();
+									buttons.add(buttonNames);
+									buttonNames.add("Back to Ada menu");
+									rh.setNeedReplyMarkup(true);
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+									answer = "Ok. Before using this command recommend check events via 'See events' command.\nChoose event date for deleting";
+								} else {
+									answer = "Not found events for deleting";
+									activeCommand.remove(id);
+								}
+
+							}
 								break;
 							case "/rent": {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = null;
 
-								for (int i = 0; i < 5; i++) {
+								for (int i = 0; i < 3; i++) {
 									buttonNames = new ArrayList<>();
 									buttons.add(buttonNames);
 									switch (i) {
 									case 0: {
-										buttonNames.add("/rent_add");
+										buttonNames.add("Menu");
+										buttonNames.add("Details");
+										buttonNames.add("Add month");
 									}
 										break;
 									case 1: {
-										buttonNames.add("/gethistory");
-										buttonNames.add("/getstatbymonth");
+										buttonNames.add("Payments");
+										buttonNames.add("Rates");
+										buttonNames.add("Change rates");
 									}
 										break;
 									case 2: {
-										buttonNames.add("/getrates");
-										buttonNames.add("/changerates");
-									}
-										break;
-									case 3: {
-										buttonNames.add("/setprimarycounters");
-									}
-										break;
-									case 4: {
-										buttonNames.add("/purge");
-										buttonNames.add("/start");
+										buttonNames.add("New primary counters");
+										buttonNames.add("Remove payment");
+										buttonNames.add("Clear all");
 									}
 										break;
 									default:
@@ -338,21 +367,16 @@ public class MessagesChecker implements Runnable {
 
 								answer = new StringBuilder()
 										.append("You can control rent by sending these commands:\n")
-										.append("/setmonth - set rent month\n")
-										.append("/setlight - set indications for light\n")
-										.append("/setwater - set indications for water, outfall calculating automatically\n")
-										.append("/settakeout - set takeout from rent\n")
-										.append("/rent_add - add month of rent\n")
-										.append("/calc - return total amount for month\n")
-										.append("/getrates - return all rates for rent\n")
-										.append("/changerates - change rates for rent\n")
-										.append("/gethistory - return total amount by months\n")
-										.append("/purge - remove statistics for all months of rent and primary values\n")
-										.append("/delmonthstat - remove statistics by month\n")
-										.append("/getstat- return rent statistics for adding month\n")
-										.append("/getstatbymonth - getting rent statistics by month\n")
-										.append("/setprimarycounters- set starting indications")
+										.append("/rent_add (Add month) - add month of rent\n")
+										.append("/getrates (Rates) - return all rates for rent\n")
+										.append("/changerates (Change rates) - change rates for rent\n")
+										.append("/gethistory (Payments) - return total amount by months\n")
+										.append("/purge (Clear all) - remove statistics for all months of rent and primary values\n")
+										.append("/delmonthstat (Remove payment) - remove statistics by month\n")
+										.append("/getstatbymonth (Details) - getting rent statistics by month\n")
+										.append("/setprimarycounters (New primary counters)- set starting indications")
 										.toString();
+
 								if (rentData.containsKey(id)) {
 									rentData.remove(id);
 								}
@@ -367,23 +391,22 @@ public class MessagesChecker implements Runnable {
 									buttons.add(buttonNames);
 									switch (i) {
 									case 0: {
-										buttonNames.add("/setmonth");
-										buttonNames.add("/setlight");
+										buttonNames.add("Month");
+										buttonNames.add("Light");
 									}
 										break;
 									case 1: {
-										buttonNames.add("/setwater");
-										buttonNames.add("/settakeout");
+										buttonNames.add("Water");
+										buttonNames.add("Takeout");
 									}
 										break;
 									case 2: {
-										buttonNames.add("/getstat");
-										buttonNames.add("/delmonthstat");
+										buttonNames.add("Calc");
 									}
 										break;
 									case 3: {
-										buttonNames.add("/calc");
-										buttonNames.add("/rent");
+										buttonNames.add("Added statistics");
+										buttonNames.add("Back to rent menu");
 									}
 										break;
 									default:
@@ -397,7 +420,16 @@ public class MessagesChecker implements Runnable {
 
 								rentData.put(id,
 										Optional.of(new RentHolder(id, owner)));
-								answer = "I'm ready for set indications";
+
+								answer = new StringBuilder(
+										"I'm ready for set indications.\nYou can use next commands:\n")
+										.append("/setmonth (Month) - set rent month\n")
+										.append("/setlight (Light) - set indications for light\n")
+										.append("/setwater (Water) - set indications for water, outfall calculating automatically\n")
+										.append("/settakeout (Takeout) - set takeout from rent\n")
+										.append("/calc (Calc) - return total amount for month\n")
+										.append("/getstat (Added statistics)- return rent statistics for adding month\n")
+										.toString();
 							}
 								break;
 							case "/getrates": {
@@ -412,32 +444,23 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = null;
 
-								for (int i = 0; i < 6; i++) {
+								for (int i = 0; i < 3; i++) {
 									buttonNames = new ArrayList<>();
 									buttons.add(buttonNames);
 									switch (i) {
 									case 0: {
-										buttonNames.add("/changehotwaterrate");
+										buttonNames.add("Hot water");
+										buttonNames.add("Cold water");
 									}
 										break;
 									case 1: {
-										buttonNames.add("/changecoldwaterrate");
+										buttonNames.add("Outfall");
+										buttonNames.add("Light rate");
 									}
 										break;
 									case 2: {
-										buttonNames.add("/changeoutfallrate");
-									}
-										break;
-									case 3: {
-										buttonNames.add("/changelightrate");
-									}
-										break;
-									case 4: {
-										buttonNames.add("/changerentamount");
-									}
-										break;
-									case 5: {
-										buttonNames.add("/rent");
+										buttonNames.add("Rent amount");
+										buttonNames.add("Back to rent menu");
 									}
 										break;
 									default:
@@ -451,11 +474,11 @@ public class MessagesChecker implements Runnable {
 
 								answer = new StringBuilder()
 										.append("You can change next rates via follows command:\n\n")
-										.append("/changehotwaterrate - set new hot water rate\n")
-										.append("/changecoldwaterrate - set new cold water rate\n")
-										.append("/changeoutfallrate - set new outfall rate\n")
-										.append("/changelightrate - set new light rate\n")
-										.append("/changerentamount - set new rent amount")
+										.append("/changehotwaterrate (Hot water) - set new hot water rate\n")
+										.append("/changecoldwaterrate (Cold water) - set new cold water rate\n")
+										.append("/changeoutfallrate (Outfall) - set new outfall rate\n")
+										.append("/changelightrate (Light rate)- set new light rate\n")
+										.append("/changerentamount (Rent amount) - set new rent amount")
 										.toString();
 							}
 								break;
@@ -474,8 +497,33 @@ public class MessagesChecker implements Runnable {
 							case "/changerentamount":
 								answer = "For change rent amount send simple message with new rent amount";
 								break;
-							case "/delmonthstat":
-								answer = "Ok. Send simple message with month for deleting. Please use this format:\n\nshortmonthname_year\nExample:may_2016";
+							case "/delmonthstat": {
+								List<List<String>> buttons = new ArrayList<>();
+
+								DataBaseHelper
+										.getInstance()
+										.getPaidRentMonths(id)
+										.stream()
+										.forEach(
+												e -> {
+													List<String> buttonNames = new ArrayList<>();
+													buttons.add(buttonNames);
+													buttonNames.add(e);
+												});
+
+								if (buttons.size() > 0) {
+									List<String> buttonNames = new ArrayList<>();
+									buttons.add(buttonNames);
+									buttonNames.add("Back to rent menu");
+									rh.setNeedReplyMarkup(true);
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+									answer = "Ok. Follow months can be deleted";
+								} else {
+									answer = "Not found months for deleting";
+									activeCommand.remove(id);
+								}
+							}
 								break;
 
 							case "/gethistory": {
@@ -498,7 +546,7 @@ public class MessagesChecker implements Runnable {
 										.get(id);
 								answer = (null != rentHolder) ? rentHolder
 										.get().getStatAddedMonth()
-										: "Rent mode is not active. For activate rent mode use /rent_add command";
+										: "Rent mode is not active. For activate rent mode use 'Add month' command";
 							}
 								break;
 							case "/getstatbymonth": {
@@ -515,11 +563,18 @@ public class MessagesChecker implements Runnable {
 													buttonNames.add(e);
 												});
 
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								answer = "OK. Send simple message with month. Please use this format:\n\nshortmonthname_year\nExample:may_2016";
+								if (buttons.size() > 0) {
+									List<String> buttonNames = new ArrayList<>();
+									buttons.add(buttonNames);
+									buttonNames.add("Back to rent menu");
+									rh.setNeedReplyMarkup(true);
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+									answer = "Ok. Follow months can be detailed";
+								} else {
+									answer = "Not found months for detailed";
+									activeCommand.remove(id);
+								}
 							}
 								break;
 							case "/calc": {
@@ -533,7 +588,7 @@ public class MessagesChecker implements Runnable {
 								rh.setReplyMarkup(this.objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
-								answer = "OK. Send simple message with outfall status. Please use this format:\n\nif need outfall send yes or not no";
+								answer = "Ok. Do you need include outfall to final amount?";
 							}
 								break;
 							case "/settakeout":
@@ -688,6 +743,7 @@ public class MessagesChecker implements Runnable {
 			}
 			break;
 		case "/delmonthstat":
+			setDefaultRentButtons(rh);
 			if (DataBaseHelper.getInstance().deleteMothStat(idChat,
 					text.toLowerCase())) {
 				answer = "Statistics of " + text + " deleted successfully!";
@@ -939,8 +995,8 @@ public class MessagesChecker implements Runnable {
 		List<String> buttonNames = new ArrayList<>();
 		buttons.add(buttonNames);
 
-		buttonNames.add("/rent");
-		buttonNames.add("/start");
+		buttonNames.add("Back to rent menu");
+		buttonNames.add("Menu");
 
 		try {
 			rh.setNeedReplyMarkup(true);

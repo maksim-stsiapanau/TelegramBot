@@ -542,17 +542,15 @@ public class DataBaseHelper {
 
 	/**
 	 * 
-	 * Get all Ada's event
+	 * Get all Ada's events
 	 * 
-	 * @return String message with all Ada's event
+	 * @return String message with all Ada's events
 	 */
 	public String getAllEvents() {
 
 		// date of bithday
 		DateTime dob = new DateTime(2015, 9, 14, 0, 0, 0, 0);
-
 		StringBuilder result = new StringBuilder();
-
 		MongoCursor<Document> iterator = null;
 
 		try {
@@ -580,6 +578,38 @@ public class DataBaseHelper {
 			}
 		}
 		return result.toString();
+	}
+
+	/**
+	 * 
+	 * Get all dates of Ada's events
+	 * 
+	 * @return String message with all dates of Ada's events
+	 */
+	public List<String> getAllEventsDates(String chatId) {
+
+		List<String> dates = new ArrayList<>();
+		MongoCursor<Document> iterator = null;
+
+		try {
+			FindIterable<Document> iter = this.db.getCollection("ada_events")
+					.find(Filters.eq("chat_id", chatId));
+			iterator = iter.iterator();
+			while (iterator.hasNext()) {
+				dates.add(this.fmt.print(new DateTime(iterator.next().getLong(
+						"event_date"))));
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		} finally {
+			try {
+				if (null != iterator)
+					iterator.close();
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+		return dates;
 	}
 
 	/**
@@ -695,7 +725,8 @@ public class DataBaseHelper {
 	/**
 	 * Return paid months for the rent
 	 * 
-	 * @param chatId - chat id
+	 * @param chatId
+	 *            - chat id
 	 * @return List<String> with paid months
 	 */
 	public List<String> getPaidRentMonths(String chatId) {
