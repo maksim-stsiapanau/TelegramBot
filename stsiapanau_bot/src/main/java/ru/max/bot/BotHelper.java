@@ -33,6 +33,7 @@ public class BotHelper {
 	public static ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> adaEvents = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, String> commandMapper = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
 
 	static {
 		commandMapper.put("rent", "/rent");

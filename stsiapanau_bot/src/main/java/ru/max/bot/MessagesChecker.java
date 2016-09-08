@@ -1,6 +1,7 @@
 package ru.max.bot;
 
 import static ru.max.bot.BotHelper.activeCommand;
+import static ru.max.bot.BotHelper.chatObjectMapper;
 import static ru.max.bot.BotHelper.adaEvents;
 import static ru.max.bot.BotHelper.adaMode;
 import static ru.max.bot.BotHelper.callApiGet;
@@ -15,6 +16,7 @@ import jackson.bot.message.Result;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -22,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import rent.PrimaryRatesHolder;
+import rent.PrimaryLightHolder;
 import rent.RentHolder;
 import telegram.api.KeyboardButton;
 import telegram.api.ReplyKeyboardMarkup;
@@ -168,8 +170,9 @@ public class MessagesChecker implements Runnable {
 								text = commandMapper.get(text);
 							}
 
-							// remove old command
+							// remove old command and object
 							activeCommand.remove(id);
+							chatObjectMapper.remove(id);
 
 							// set active command
 							activeCommand.put(id, text);
@@ -473,7 +476,7 @@ public class MessagesChecker implements Runnable {
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = new StringBuilder()
-										.append("You can change next rates via follows command:\n\n")
+										.append("You can change next rates via follows commands:\n\n")
 										.append("/changehotwaterrate (Hot water) - set new hot water rate\n")
 										.append("/changecoldwaterrate (Cold water) - set new cold water rate\n")
 										.append("/changeoutfallrate (Outfall) - set new outfall rate\n")
@@ -603,8 +606,37 @@ public class MessagesChecker implements Runnable {
 							case "/setwater":
 								answer = "For set water indications please use this format:\n\nhot=value cold=value";
 								break;
-							case "/setprimarycounters":
-								answer = "For set primary indications please use this format:\n\nt1=value t2=value t3=value hw=value cw=value t1rate=value t2rate=value t3rate=value hwrate=value cwrate=value outfallrate=value rentamount=value";
+							case "/setprimarycounters": {
+								List<List<String>> buttons = new ArrayList<>();
+								List<String> buttonNames = new ArrayList<>();
+								buttons.add(buttonNames);
+								buttonNames.add("Set water");
+								buttonNames.add("Set rent amount");
+								buttonNames.add("Set light");
+								buttonNames.add("Back to rent menu");
+
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(this.objectMapper
+										.writeValueAsString(getButtons(buttons)));
+
+								answer = new StringBuilder()
+										.append("You can set next primary counters via follows commands:\n\n")
+										.append("/setprimarywater (Set water) - set primary counters for water\n")
+										.append("/setprimaryrentamount (Set rent amount) - set rent amount per month\n")
+										.append("/setprimarylight (Set light) - set primary counters for light\n")
+										.toString();
+							}
+
+								break;
+							case "/setprimarylight": {
+								List<List<String>> buttons = new ArrayList<>();
+								List<String> buttonNames = new ArrayList<>();
+								buttons.add(buttonNames);
+								buttonNames.add("1");
+								buttonNames.add("2");
+								buttonNames.add("3");
+								answer = "Which type of tariff is right for you?";
+							}
 								break;
 							default: {
 							}
@@ -660,6 +692,8 @@ public class MessagesChecker implements Runnable {
 
 	private String processSimpleMessages(String idChat, String owner,
 			String command, String text, ResponseHolder rh) {
+
+		boolean isRemoveCommand = true;
 
 		String answer = "";
 
@@ -868,91 +902,58 @@ public class MessagesChecker implements Runnable {
 			}
 		}
 			break;
-		case "/setprimarycounters": {
+		case "/setprimarylight": {
+			isRemoveCommand = false;
 
-			String[] data = text.split(" ");
+			switch (text) {
+			case "1":
+				answer = "Ok. You have one-tariff counter. Set primary value using next format:\nt1=value";
+				break;
+			case "2":
+				answer = "Ok. You have two-tariff counter. Set primary value using next format:\nt1=value t2=value";
+				break;
+			case "3":
+				answer = "Ok. You have three-tariff counter. Set primary value using next format:\nt1=value t2=value t3=value";
+				break;
+			default: {
 
-			int len = data.length;
+				// check message with indication
+				if (checkStrByRegexp(text, "t[0-9]{1}=[0-9]+.?[0-9]+")) {
+					chatObjectMapper.put(idChat, new PrimaryLightHolder());
+					HashMap<String, String> tariff = new HashMap<>();
+					String[] lightIndications = text.split(" ");
+					for (String str : lightIndications) {
+						String[] temp = str.split("=");
+						tariff.put(temp[0], temp[1]);
+					}
+					((PrimaryLightHolder) chatObjectMapper.get(idChat))
+							.setIndications(tariff);
+					StringBuilder sb = new StringBuilder(
+							"Ok. Indications saved successfully.");
 
-			double t1Rate = 0.0, t2Rate = 0.0, t3Rate = 0.0, hwRate = 0.0, cwRate = 0.0, outFallRate = 0.0;
-			long t1 = 0, t2 = 0, t3 = 0, hw = 0, cw = 0, rentAmount = 0;
+					switch (lightIndications.length) {
+					case 1:
 
-			boolean flag = true;
+						break;
+					case 2:
 
-			for (int j = 1; j < len; j++) {
-				String temp = data[j].trim();
+						break;
+					case 3:
 
-				if (temp.length() > 0 && temp.contains("=")) {
+						break;
 
-					String[] counter = temp.split("=");
-
-					switch (counter[0]) {
-					case "t1":
-						t1 = Long.parseLong(counter[1]);
-						break;
-					case "t2":
-						t2 = Long.parseLong(counter[1]);
-						break;
-					case "t3":
-						t3 = Long.parseLong(counter[1]);
-						break;
-					case "hw":
-						hw = Long.parseLong(counter[1]);
-						break;
-					case "cw":
-						cw = Long.parseLong(counter[1]);
-						break;
-					case "t1rate":
-						t1Rate = Double.parseDouble(counter[1]);
-						break;
-					case "t2rate":
-						t2Rate = Double.parseDouble(counter[1]);
-						break;
-					case "t3rate":
-						t3Rate = Double.parseDouble(counter[1]);
-						break;
-					case "cwrate":
-						cwRate = Double.parseDouble(counter[1]);
-						break;
-					case "hwrate":
-						hwRate = Double.parseDouble(counter[1]);
-						break;
-					case "outfallrate":
-						outFallRate = Double.parseDouble(counter[1]);
-						break;
-					case "rentamount":
-						rentAmount = Long.parseLong(counter[1]);
-						break;
 					default:
 						break;
 					}
+
+					answer = sb.toString();
+
 				} else {
-					answer = "Wrong input  primary values! For check format use command -  /rent";
-					flag = false;
-					break;
+					// bad format
+					answer = "Wrong format! Please ";
 				}
 			}
-
-			if (flag) {
-
-				PrimaryRatesHolder rent = new PrimaryRatesHolder.Builder()
-						.setT1Start(t1).setT2Start(t2).setT3Start(t3)
-						.setT3Rate(t3Rate).setT2Rate(t2Rate).setT1Rate(t1Rate)
-						.setHwRate(hwRate).setCwRate(cwRate).setCwStart(cw)
-						.setHwStart(hw).setOutFallRate(outFallRate)
-						.setRentAmount(rentAmount).setIdChat(idChat)
-						.setOwner(owner).build();
-
-				logger.debug(rent.toString());
-
-				boolean stat = DataBaseHelper.getInstance()
-						.insertPrimaryCounters(rent);
-
-				if (stat) {
-					answer = "Primary indications set successfully!";
-				} else {
-					answer = "Can't set primary indications!";
-				}
+				break;
 			}
 
 		}
@@ -962,7 +963,9 @@ public class MessagesChecker implements Runnable {
 			break;
 		}
 
-		activeCommand.remove(idChat);
+		if (isRemoveCommand) {
+			activeCommand.remove(idChat);
+		}
 
 		return answer;
 	}
