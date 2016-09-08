@@ -24,11 +24,11 @@ public class RatesHolder {
 	private Double coldWaterRate;
 	private Double hotWaterRate;
 	private Double outfallRate;
-	private Long lastT1Count;
-	private Long lastT2Count;
-	private Long lastT3Count;
-	private Long lastColdWaterCount;
-	private Long lastHotWaterCount;
+	private Double lastT1Count;
+	private Double lastT2Count;
+	private Double lastT3Count;
+	private Double lastColdWaterCount;
+	private Double lastHotWaterCount;
 	private final String chatId;
 
 	private RatesHolder(String chatId) {
@@ -44,11 +44,11 @@ public class RatesHolder {
 		this.coldWaterRate = doc.getDouble("cw_rate");
 		this.hotWaterRate = doc.getDouble("hw_rate");
 		this.outfallRate = doc.getDouble("outfall_rate");
-		this.lastT1Count = doc.getLong("t1_last");
-		this.lastT2Count = doc.getLong("t2_last");
-		this.lastT3Count = doc.getLong("t3_last");
-		this.lastColdWaterCount = doc.getLong("cw_last");
-		this.lastHotWaterCount = doc.getLong("hw_last");
+		this.lastT1Count = doc.getDouble("t1_last");
+		this.lastT2Count = doc.getDouble("t2_last");
+		this.lastT3Count = doc.getDouble("t3_last");
+		this.lastColdWaterCount = doc.getDouble("cw_last");
+		this.lastHotWaterCount = doc.getDouble("hw_last");
 	}
 
 	public static RatesHolder getInstance(String chatId) {
@@ -83,23 +83,23 @@ public class RatesHolder {
 		return outfallRate;
 	}
 
-	public Long getLastT1Count() {
+	public Double getLastT1Count() {
 		return lastT1Count;
 	}
 
-	public Long getLastT2Count() {
+	public Double getLastT2Count() {
 		return lastT2Count;
 	}
 
-	public Long getLastT3Count() {
+	public Double getLastT3Count() {
 		return lastT3Count;
 	}
 
-	public Long getLastColdWaterCount() {
+	public Double getLastColdWaterCount() {
 		return lastColdWaterCount;
 	}
 
-	public Long getLastHotWaterCount() {
+	public Double getLastHotWaterCount() {
 		return lastHotWaterCount;
 	}
 

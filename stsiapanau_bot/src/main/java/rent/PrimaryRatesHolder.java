@@ -13,11 +13,11 @@ import org.apache.commons.lang.builder.ToStringStyle;
  */
 public class PrimaryRatesHolder {
 
-	private final long t1Start;
-	private final long t2Start;
-	private final long t3Start;
-	private final long hwStart;
-	private final long cwStart;
+	private final double t1Start;
+	private final double t2Start;
+	private final double t3Start;
+	private final double hwStart;
+	private final double cwStart;
 	private final double t1Rate;
 	private final double t2Rate;
 	private final double t3Rate;
@@ -143,23 +143,23 @@ public class PrimaryRatesHolder {
 
 	}
 
-	public long getT1Start() {
+	public double getT1Start() {
 		return t1Start;
 	}
 
-	public long getT2Start() {
+	public double getT2Start() {
 		return t2Start;
 	}
 
-	public long getT3Start() {
+	public double getT3Start() {
 		return t3Start;
 	}
 
-	public long getHwStart() {
+	public double getHwStart() {
 		return hwStart;
 	}
 
-	public long getCwStart() {
+	public double getCwStart() {
 		return cwStart;
 	}
 
