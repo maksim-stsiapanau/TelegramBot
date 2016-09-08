@@ -828,11 +828,11 @@ public class MessagesChecker implements Runnable {
 			if (null != rentHolder) {
 				if (data.length == 3) {
 					rentHolder.get().setCountT1(
-							Long.parseLong(data[0].split("=")[1]));
+							Double.parseDouble(data[0].split("=")[1]));
 					rentHolder.get().setCountT2(
-							Long.parseLong(data[1].split("=")[1]));
+							Double.parseDouble(data[1].split("=")[1]));
 					rentHolder.get().setCountT3(
-							Long.parseLong(data[2].split("=")[1]));
+							Double.parseDouble(data[2].split("=")[1]));
 					answer = "Light set successfully! t1="
 							+ rentHolder.get().getCountT1() + "; t2="
 							+ rentHolder.get().getCountT2() + "; t3="
@@ -853,9 +853,9 @@ public class MessagesChecker implements Runnable {
 			if (null != rentHolder) {
 				if (data.length == 2) {
 					rentHolder.get().setCountColdWater(
-							Long.parseLong(data[1].split("=")[1]));
+							Double.parseDouble(data[1].split("=")[1]));
 					rentHolder.get().setCountHotWater(
-							Long.parseLong(data[0].split("=")[1]));
+							Double.parseDouble(data[0].split("=")[1]));
 					answer = "Water set successfully! Hot="
 							+ rentHolder.get().getCountHotWater() + "; Cold: "
 							+ rentHolder.get().getCountColdWater();

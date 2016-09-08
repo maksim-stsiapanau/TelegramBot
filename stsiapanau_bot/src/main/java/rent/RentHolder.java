@@ -155,15 +155,15 @@ public class RentHolder {
 	}
 
 	public void setT1Rate(double t1Rate) {
-		T1Rate = t1Rate;
+		this.T1Rate = t1Rate;
 	}
 
 	public double getT2Rate() {
 		return this.T2Rate;
 	}
 
-	public void setT2Rate(int t2Rate) {
-		T2Rate = t2Rate;
+	public void setT2Rate(double t2Rate) {
+		this.T2Rate = t2Rate;
 	}
 
 	public double getT3Rate() {
@@ -210,7 +210,7 @@ public class RentHolder {
 		return this.countT1;
 	}
 
-	public void setCountT1(long countT1) {
+	public void setCountT1(double countT1) {
 		this.countT1 = countT1;
 	}
 
@@ -218,7 +218,7 @@ public class RentHolder {
 		return this.countT2;
 	}
 
-	public void setCountT2(long countT2) {
+	public void setCountT2(double countT2) {
 		this.countT2 = countT2;
 	}
 
@@ -226,7 +226,7 @@ public class RentHolder {
 		return this.countT3;
 	}
 
-	public void setCountT3(long countT3) {
+	public void setCountT3(double countT3) {
 		this.countT3 = countT3;
 	}
 
@@ -234,7 +234,7 @@ public class RentHolder {
 		return this.countColdWater;
 	}
 
-	public void setCountColdWater(long countColdWater) {
+	public void setCountColdWater(double countColdWater) {
 		this.countColdWater = countColdWater;
 	}
 
@@ -242,7 +242,7 @@ public class RentHolder {
 		return this.countHotWater;
 	}
 
-	public void setCountHotWater(long countHotWater) {
+	public void setCountHotWater(double countHotWater) {
 		this.countHotWater = countHotWater;
 	}
 
@@ -322,23 +322,23 @@ public class RentHolder {
 		return this.priceOutFall;
 	}
 
-	public void setLastT1Count(long lastT1Count) {
+	public void setLastT1Count(double lastT1Count) {
 		this.lastT1Count = lastT1Count;
 	}
 
-	public void setLastT2Count(long lastT2Count) {
+	public void setLastT2Count(double lastT2Count) {
 		this.lastT2Count = lastT2Count;
 	}
 
-	public void setLastT3Count(long lastT3Count) {
+	public void setLastT3Count(double lastT3Count) {
 		this.lastT3Count = lastT3Count;
 	}
 
-	public void setLastColdWaterCount(long lastColdWaterCount) {
+	public void setLastColdWaterCount(double lastColdWaterCount) {
 		this.lastColdWaterCount = lastColdWaterCount;
 	}
 
-	public void setLastHotWaterCount(long lastHotWaterCount) {
+	public void setLastHotWaterCount(double lastHotWaterCount) {
 		this.lastHotWaterCount = lastHotWaterCount;
 	}
 
