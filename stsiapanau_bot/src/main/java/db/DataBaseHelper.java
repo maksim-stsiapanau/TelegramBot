@@ -160,42 +160,64 @@ public class DataBaseHelper {
 				double totalWater = hotWaterPrice + coldWaterPrice
 						+ outfallPrice;
 
-				sb.append("Added by: ").append(doc.get("who_set"))
-						.append("\nMonth: ").append(doc.get("month"))
-						.append("\nLight\n").append("T1 indication: ")
-						.append(doc.get("t1_indication")).append("; used: ")
-						.append(doc.get("t1_used")).append("; price: ")
+				sb.append("Added by: ")
+						.append(doc.get("who_set"))
+						.append("\nMonth: ")
+						.append(doc.get("month"))
+						.append("\nLight\n")
+						.append("T1 indication: ")
+						.append(doc.get("t1_indication"))
+						.append("; used: ")
+						.append(String.format("%.2f", doc.get("t1_used")))
+						.append("; price: ")
 						.append(String.format("%.2f", t1Price))
-						.append(" rub; rate: ").append(doc.get("t1_rate"))
-						.append(" rub.").append("\nT2 indication: ")
-						.append(doc.get("t2_indication")).append("; used: ")
-						.append(doc.get("t2_used")).append("; price: ")
+						.append(" rub; rate: ")
+						.append(doc.get("t1_rate"))
+						.append(" rub.")
+						.append("\nT2 indication: ")
+						.append(doc.get("t2_indication"))
+						.append("; used: ")
+						.append(String.format("%.2f", doc.get("t2_used")))
+						.append("; price: ")
 						.append(String.format("%.2f", t2Price))
-						.append(" rub; rate: ").append(doc.get("t2_rate"))
-						.append(" rub.").append("\nT3 indication: ")
-						.append(doc.get("t3_indication")).append("; used: ")
-						.append(doc.get("t3_used")).append("; price: ")
+						.append(" rub; rate: ")
+						.append(doc.get("t2_rate"))
+						.append(" rub.")
+						.append("\nT3 indication: ")
+						.append(doc.get("t3_indication"))
+						.append("; used: ")
+						.append(String.format("%.2f", doc.get("t3_used")))
+						.append("; price: ")
 						.append(String.format("%.2f", t3Price))
-						.append(" rub; rate: ").append(doc.get("t3_rate"))
-						.append(" rub.").append("\n\nTotal price for light: ")
+						.append(" rub; rate: ")
+						.append(doc.get("t3_rate"))
+						.append(" rub.")
+						.append("\n\nTotal price for light: ")
 						.append(String.format("%.2f", totalLightPrice))
-						.append(" rub.").append("\n\nWater\n")
+						.append(" rub.")
+						.append("\n\nWater\n")
 						.append("Hot water indication: ")
 						.append(doc.get("hot_water_indication"))
-						.append("; used: ").append(doc.get("hot_water_used"))
+						.append("; used: ")
+						.append(String.format("%.2f", doc.get("hot_water_used")))
 						.append("; price: ")
 						.append(String.format("%.2f", hotWaterPrice))
 						.append(" rub; rate: ")
-						.append(doc.get("hot_water_rate")).append(" rub.")
+						.append(doc.get("hot_water_rate"))
+						.append(" rub.")
 						.append("\nCold water indication: ")
 						.append(doc.get("cold_water_indication"))
-						.append("; used: ").append(doc.get("cold_water_used"))
+						.append("; used: ")
+						.append(String.format("%.2f",
+								doc.get("cold_water_used")))
 						.append("; price: ")
 						.append(String.format("%.2f", coldWaterPrice))
 						.append(" rub; rate: ")
-						.append(doc.get("cold_water_rate")).append(" rub.")
+						.append(doc.get("cold_water_rate"))
+						.append(" rub.")
 						.append("\nOutfall water indication: ")
-						.append(doc.get("outfall_indication"))
+						.append(String.format("%.2f",
+								doc.get("outfall_indication")))
 						.append("; price: ")
 						.append(String.format("%.2f", outfallPrice))
 						.append(" rub; rate: ").append(doc.get("outfall_rate"))
@@ -754,6 +776,27 @@ public class DataBaseHelper {
 		}
 
 		return months;
+	}
+
+	/**
+	 * Check exist rent user
+	 * 
+	 * @param chatId
+	 *            - unique chat id
+	 * @return existing flag
+	 */
+	public boolean existRentUser(String chatId) {
+
+		Optional<Document> rates = Optional.empty();
+
+		try {
+			rates = Optional.ofNullable(this.db.getCollection("rent_const")
+					.find(Filters.eq("id_chat", chatId)).first());
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return rates.isPresent();
 	}
 
 	private static class LazyDbHolder {
