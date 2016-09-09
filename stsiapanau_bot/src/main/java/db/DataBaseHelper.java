@@ -778,6 +778,27 @@ public class DataBaseHelper {
 		return months;
 	}
 
+	/**
+	 * Check exist rent user
+	 * 
+	 * @param chatId
+	 *            - unique chat id
+	 * @return existing flag
+	 */
+	public boolean existRentUser(String chatId) {
+
+		Optional<Document> rates = Optional.empty();
+
+		try {
+			rates = Optional.ofNullable(this.db.getCollection("rent_const")
+					.find(Filters.eq("id_chat", chatId)).first());
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return rates.isPresent();
+	}
+
 	private static class LazyDbHolder {
 
 		public static DataBaseHelper instance = new DataBaseHelper();

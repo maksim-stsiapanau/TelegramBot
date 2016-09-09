@@ -41,7 +41,7 @@ public class BotHelper {
 		commandMapper.put("save", "/save");
 		commandMapper.put("ada", "/ada");
 		commandMapper.put("back to ada menu", "/ada");
-		commandMapper.put("menu", "/start");
+		commandMapper.put("home", "/start");
 		commandMapper.put("payments", "/gethistory");
 		commandMapper.put("rates", "/getrates");
 		commandMapper.put("change rates", "/changerates");

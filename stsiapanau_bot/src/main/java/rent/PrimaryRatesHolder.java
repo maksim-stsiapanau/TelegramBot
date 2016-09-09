@@ -47,11 +47,11 @@ public class PrimaryRatesHolder {
 
 	public static class Builder {
 
-		public long t1Start;
-		public long t2Start;
-		public long t3Start;
-		public long hwStart;
-		public long cwStart;
+		public double t1Start;
+		public double t2Start;
+		public double t3Start;
+		public double hwStart;
+		public double cwStart;
 		public double t1Rate;
 		public double t2Rate;
 		public double t3Rate;
@@ -66,27 +66,27 @@ public class PrimaryRatesHolder {
 
 		}
 
-		public Builder setT1Start(long t1Start) {
+		public Builder setT1Start(double t1Start) {
 			this.t1Start = t1Start;
 			return this;
 		}
 
-		public Builder setT2Start(long t2Start) {
+		public Builder setT2Start(double t2Start) {
 			this.t2Start = t2Start;
 			return this;
 		}
 
-		public Builder setT3Start(long t3Start) {
+		public Builder setT3Start(double t3Start) {
 			this.t3Start = t3Start;
 			return this;
 		}
 
-		public Builder setHwStart(long hwStart) {
+		public Builder setHwStart(double hwStart) {
 			this.hwStart = hwStart;
 			return this;
 		}
 
-		public Builder setCwStart(long cwStart) {
+		public Builder setCwStart(double cwStart) {
 			this.cwStart = cwStart;
 			return this;
 		}

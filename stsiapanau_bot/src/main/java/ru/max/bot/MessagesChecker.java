@@ -227,7 +227,7 @@ public class MessagesChecker implements Runnable {
 									}
 										break;
 									case 2: {
-										buttonNames.add("Menu");
+										buttonNames.add("Home");
 									}
 										break;
 									default:
@@ -261,7 +261,7 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = new ArrayList<>();
 								buttonNames.add("Back to Ada menu");
-								buttonNames.add("Menu");
+								buttonNames.add("Home");
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
@@ -334,48 +334,74 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								List<String> buttonNames = null;
 
-								for (int i = 0; i < 3; i++) {
-									buttonNames = new ArrayList<>();
-									buttons.add(buttonNames);
-									switch (i) {
-									case 0: {
-										buttonNames.add("Menu");
-										buttonNames.add("Details");
-										buttonNames.add("Add month");
+								if (DataBaseHelper.getInstance().existRentUser(
+										id)) {
+									for (int i = 0; i < 3; i++) {
+										buttonNames = new ArrayList<>();
+										buttons.add(buttonNames);
+										switch (i) {
+										case 0: {
+											buttonNames.add("Home");
+											buttonNames.add("Details");
+											buttonNames.add("Add month");
+										}
+											break;
+										case 1: {
+											buttonNames.add("Payments");
+											buttonNames.add("Rates");
+											buttonNames.add("Change rates");
+										}
+											break;
+										case 2: {
+											buttonNames
+													.add("New primary counters");
+											buttonNames.add("Remove payment");
+											buttonNames.add("Clear all");
+										}
+											break;
+										default:
+											break;
+										}
 									}
-										break;
-									case 1: {
-										buttonNames.add("Payments");
-										buttonNames.add("Rates");
-										buttonNames.add("Change rates");
+
+									answer = new StringBuilder()
+											.append("You can control your rent by sending these commands:\n")
+											.append("/rent_add (Add month) - add month of rent\n")
+											.append("/getrates (Rates) - return all rates for rent\n")
+											.append("/changerates (Change rates) - change rates for rent\n")
+											.append("/gethistory (Payments) - return total amount by months\n")
+											.append("/purge (Clear all) - remove statistics for all months of rent and primary values\n")
+											.append("/delmonthstat (Remove payment) - remove statistics by month\n")
+											.append("/getstatbymonth (Details) - getting rent statistics by month\n")
+											.append("/setprimarycounters (New primary counters)- set starting indications")
+											.toString();
+								} else {
+									for (int i = 0; i < 2; i++) {
+										buttonNames = new ArrayList<>();
+										buttons.add(buttonNames);
+										switch (i) {
+										case 0:
+											buttonNames
+													.add("New primary counters");
+											break;
+										case 1:
+											buttonNames.add("Home");
+											break;
+										default:
+											break;
+										}
+
 									}
-										break;
-									case 2: {
-										buttonNames.add("New primary counters");
-										buttonNames.add("Remove payment");
-										buttonNames.add("Clear all");
-									}
-										break;
-									default:
-										break;
-									}
+									answer = new StringBuilder()
+											.append("Hi new user! For access to all functions for control your rent you must set primary counters. Please use this command:\n")
+											.append("/start (Home) - return to start menu\n")
+											.append("/setprimarycounters (New primary counters)- set starting indications")
+											.toString();
 								}
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
 										.writeValueAsString(getButtons(buttons)));
-
-								answer = new StringBuilder()
-										.append("You can control rent by sending these commands:\n")
-										.append("/rent_add (Add month) - add month of rent\n")
-										.append("/getrates (Rates) - return all rates for rent\n")
-										.append("/changerates (Change rates) - change rates for rent\n")
-										.append("/gethistory (Payments) - return total amount by months\n")
-										.append("/purge (Clear all) - remove statistics for all months of rent and primary values\n")
-										.append("/delmonthstat (Remove payment) - remove statistics by month\n")
-										.append("/getstatbymonth (Details) - getting rent statistics by month\n")
-										.append("/setprimarycounters (New primary counters)- set starting indications")
-										.toString();
 
 								if (rentData.containsKey(id)) {
 									rentData.remove(id);
@@ -873,9 +899,8 @@ public class MessagesChecker implements Runnable {
 			String[] data = text.split(" ");
 
 			int len = data.length;
-
-			double t1Rate = 0.0, t2Rate = 0.0, t3Rate = 0.0, hwRate = 0.0, cwRate = 0.0, outFallRate = 0.0;
-			long t1 = 0, t2 = 0, t3 = 0, hw = 0, cw = 0, rentAmount = 0;
+			double t1Rate = 0.0, t2Rate = 0.0, t3Rate = 0.0, hwRate = 0.0, cwRate = 0.0, outFallRate = 0.0, t1 = 0, t2 = 0, t3 = 0, hw = 0, cw = 0;
+			long rentAmount = 0;
 
 			boolean flag = true;
 
@@ -888,19 +913,19 @@ public class MessagesChecker implements Runnable {
 
 					switch (counter[0]) {
 					case "t1":
-						t1 = Long.parseLong(counter[1]);
+						t1 = Double.parseDouble(counter[1]);
 						break;
 					case "t2":
-						t2 = Long.parseLong(counter[1]);
+						t2 = Double.parseDouble(counter[1]);
 						break;
 					case "t3":
-						t3 = Long.parseLong(counter[1]);
+						t3 = Double.parseDouble(counter[1]);
 						break;
 					case "hw":
-						hw = Long.parseLong(counter[1]);
+						hw = Double.parseDouble(counter[1]);
 						break;
 					case "cw":
-						cw = Long.parseLong(counter[1]);
+						cw = Double.parseDouble(counter[1]);
 						break;
 					case "t1rate":
 						t1Rate = Double.parseDouble(counter[1]);
@@ -996,7 +1021,7 @@ public class MessagesChecker implements Runnable {
 		buttons.add(buttonNames);
 
 		buttonNames.add("Back to rent menu");
-		buttonNames.add("Menu");
+		buttonNames.add("Home");
 
 		try {
 			rh.setNeedReplyMarkup(true);
