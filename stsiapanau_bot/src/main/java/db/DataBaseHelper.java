@@ -20,7 +20,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
 
-import rent.PrimaryRatesHolder;
 import rent.RentHolder;
 
 import com.mongodb.MongoClient;
@@ -435,59 +434,36 @@ public class DataBaseHelper {
 	/**
 	 * Initialization primary indications like light,water and rates for it
 	 * 
+	 * @param <T>
+	 * 
 	 * @param r
 	 *            - Rent instance
 	 * @return boolean status execute
 	 */
-	public boolean insertPrimaryCounters(PrimaryRatesHolder r) {
+	public <T> boolean insertPrimaryCounters(T obj, String field,
+			String idChat, String owner) {
 
 		boolean status = true;
 
 		try {
 			Optional<Document> rates = Optional.ofNullable(this.db
 					.getCollection("rent_const")
-					.find(Filters.eq("id_chat", r.getIdChat())).first());
+					.find(Filters.eq("id_chat", idChat)).first());
 			if (rates.isPresent()) {
-				DeleteResult dr = this.db.getCollection("rent_const")
-						.deleteMany(Filters.eq("id_chat", r.getIdChat()));
-				logger.debug("Count deleted rows for chat with id %s: %s",
-						r.getIdChat(), dr.getDeletedCount());
+				this.db.getCollection("rent_const").updateOne(
+						this.db.getCollection("rent_const")
+								.find(Filters.eq("id_chat", idChat)).first(),
+						new Document("$set", new Document(field, obj)));
+				
 			} else {
-				logger.debug("New client!");
+				this.db.getCollection("rent_const").insertOne(
+						new Document(field, obj).append("id_chat", idChat)
+								.append("owner", owner));
+
 			}
 		} catch (Exception e) {
-			status = false;
-			logger.error("Can't delete primaty indications! Error: %s",
-					e.getMessage(), e);
-		}
-
-		if (status) {
-			try {
-				this.db.getCollection("rent_const").insertOne(
-						new Document("rent_amount", r.getRentAmount())
-								.append("t1_start", r.getT1Start())
-								.append("t2_start", r.getT2Start())
-								.append("t3_start", r.getT3Start())
-								.append("t1_last", r.getT1Start())
-								.append("t2_last", r.getT2Start())
-								.append("t3_last", r.getT3Start())
-								.append("t1_rate", r.getT1Rate())
-								.append("t2_rate", r.getT2Rate())
-								.append("t3_rate", r.getT3Rate())
-								.append("hw_start", r.getHwStart())
-								.append("cw_start", r.getCwStart())
-								.append("hw_last", r.getHwStart())
-								.append("cw_last", r.getCwStart())
-								.append("hw_rate", r.getHwRate())
-								.append("cw_rate", r.getCwRate())
-								.append("outfall_rate", r.getOutFallRate())
-								.append("id_chat", r.getIdChat())
-								.append("owner", r.getOwner()));
-			} catch (Exception e) {
-				status = false;
-				logger.error("Can't insert primary values! Error: %s",
-						e.getMessage(), e);
-			}
+			logger.error("Can't insert primary values for %s! Error: %s",
+					e.getMessage(), field, e);
 		}
 		return status;
 	}

@@ -1,10 +1,10 @@
 package ru.max.bot;
 
 import static ru.max.bot.BotHelper.activeCommand;
-import static ru.max.bot.BotHelper.chatObjectMapper;
 import static ru.max.bot.BotHelper.adaEvents;
 import static ru.max.bot.BotHelper.adaMode;
 import static ru.max.bot.BotHelper.callApiGet;
+import static ru.max.bot.BotHelper.chatObjectMapper;
 import static ru.max.bot.BotHelper.checkStrByRegexp;
 import static ru.max.bot.BotHelper.commandMapper;
 import static ru.max.bot.BotHelper.rentData;
@@ -14,10 +14,12 @@ import jackson.bot.message.IncomeMessage;
 import jackson.bot.message.Message;
 import jackson.bot.message.Result;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -25,12 +27,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import rent.PrimaryLightHolder;
+import rent.PrimaryLightHolder.Perionds;
 import rent.RentHolder;
 import telegram.api.KeyboardButton;
 import telegram.api.ReplyKeyboardMarkup;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
 
@@ -50,6 +57,39 @@ public class MessagesChecker implements Runnable {
 
 	public MessagesChecker(String telegramApiUrl) {
 		this.telegramApiUrl = telegramApiUrl;
+//		this.objectMapper.configure(
+//				DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		try {
+			PrimaryLightHolder plh = this.objectMapper.readValue(
+					(String) DataBaseHelper.getInstance().getFirstValue(
+							"rent_const", "light",
+							Filters.eq("id_chat", "90301737")),
+					PrimaryLightHolder.class);
+			System.out.println(plh.getPeriod());
+			System.out.println("indications");
+			for (Entry<String, Double> entry : plh.getIndications().entrySet()) {
+				System.out.println(entry.getKey());
+				System.out.println(entry.getValue());
+			}
+
+			System.out.println("rates");
+
+			for (Entry<String, Double> entry : plh.getRates().entrySet()) {
+				System.out.println(entry.getKey());
+				System.out.println(entry.getValue());
+			}
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.println("Finish");
 	}
 
 	@Override
@@ -645,34 +685,28 @@ public class MessagesChecker implements Runnable {
 								answer = "For set water indications please use this format:\n\nhot=value cold=value";
 								break;
 							case "/setprimarycounters": {
-								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = new ArrayList<>();
-								buttons.add(buttonNames);
-								buttonNames.add("Set water");
-								buttonNames.add("Set rent amount");
-								buttonNames.add("Set light");
-								buttonNames.add("Back to rent menu");
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
+								setPrimaryDefaultButtons(rh);
 								answer = new StringBuilder()
 										.append("You can set next primary counters via follows commands:\n\n")
-										.append("/setprimarywater (Set water) - set primary counters for water\n")
-										.append("/setprimaryrentamount (Set rent amount) - set rent amount per month\n")
-										.append("/setprimarylight (Set light) - set primary counters for light\n")
+										.append("/setprimarywater (set water) - set primary counters for water\n")
+										.append("/setprimaryrentamount (set rent amount) - set rent amount per month\n")
+										.append("/setprimarylight (set light) - set primary counters for light\n")
 										.toString();
 							}
 
 								break;
+							case "/setprimaryrentamount":
+								break;
 							case "/setprimarylight": {
+								chatObjectMapper.put(id,
+										new PrimaryLightHolder());
 								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = new ArrayList<>();
-								buttons.add(buttonNames);
-								buttonNames.add("1");
-								buttonNames.add("2");
-								buttonNames.add("3");
+								buttons.add(getButtonsList("1", "2", "3"));
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(this.objectMapper
+										.writeValueAsString(getButtons(buttons)));
 								answer = "Which type of tariff is right for you?";
 							}
 								break;
@@ -943,57 +977,211 @@ public class MessagesChecker implements Runnable {
 		case "/setprimarylight": {
 			isRemoveCommand = false;
 
-			switch (text) {
-			case "1":
-				answer = "Ok. You have one-tariff counter. Set primary value using next format:\nt1=value";
-				break;
-			case "2":
-				answer = "Ok. You have two-tariff counter. Set primary value using next format:\nt1=value t2=value";
-				break;
-			case "3":
-				answer = "Ok. You have three-tariff counter. Set primary value using next format:\nt1=value t2=value t3=value";
-				break;
-			default: {
+			PrimaryLightHolder lightObj = (PrimaryLightHolder) chatObjectMapper
+					.get(idChat);
+			if (null == lightObj.getTariffType()) {
+				lightObj.setTariffType(Integer.valueOf(text));
+				switch (text) {
+				case "1":
+					setDefaultRentButtons(rh);
+					answer = "Ok. You have one-tariff counter. Send simple message with value";
+					break;
+				case "2": {
+					List<List<String>> buttons = new ArrayList<>();
 
-				// check message with indication
-				if (checkStrByRegexp(text, "t[0-9]{1}=[0-9]+.?[0-9]+")) {
-					chatObjectMapper.put(idChat, new PrimaryLightHolder());
-					HashMap<String, String> tariff = new HashMap<>();
-					String[] lightIndications = text.split(" ");
-					for (String str : lightIndications) {
-						String[] temp = str.split("=");
-						tariff.put(temp[0], temp[1]);
+					buttons.add(getButtonsList(PrimaryLightHolder.Perionds.DAY
+							.name().toLowerCase(),
+							PrimaryLightHolder.Perionds.NIGHT.name()
+									.toLowerCase()));
+					buttons.add(getButtonsList("Back to rent menu"));
+
+					try {
+						rh.setNeedReplyMarkup(true);
+						rh.setReplyMarkup(this.objectMapper
+								.writeValueAsString(getButtons(buttons)));
+					} catch (JsonProcessingException e) {
+						logger.error(e.getMessage(), e);
 					}
-					((PrimaryLightHolder) chatObjectMapper.get(idChat))
-							.setIndications(tariff);
-					StringBuilder sb = new StringBuilder(
-							"Ok. Indications saved successfully.");
+					answer = "Ok. You have two-tariff counter. Set primary value for it";
+				}
+					break;
+				case "3": {
+					List<List<String>> buttons = new ArrayList<>();
+					buttons.add(getButtonsList(PrimaryLightHolder.Perionds.PEAK
+							.name().toLowerCase(),
+							PrimaryLightHolder.Perionds.HALF_PEAK.name()
+									.toLowerCase(),
+							PrimaryLightHolder.Perionds.NIGHT.name()
+									.toLowerCase()));
+					buttons.add(getButtonsList("Back to rent menu"));
 
-					switch (lightIndications.length) {
+					try {
+						rh.setNeedReplyMarkup(true);
+						rh.setReplyMarkup(this.objectMapper
+								.writeValueAsString(getButtons(buttons)));
+					} catch (JsonProcessingException e) {
+						logger.error(e.getMessage(), e);
+					}
+					answer = "Ok. You have three-tariff counter. Set primary value for it";
+					break;
+				}
+				default:
+					break;
+				}
+			} else {
+
+				Integer tariffType = lightObj.getTariffType();
+				HashMap<String, Double> rates = lightObj.getRates();
+
+				Perionds[] periods = PrimaryLightHolder.Perionds.values();
+				List<String> periodsStr = new ArrayList<>();
+
+				for (Perionds period : periods) {
+					periodsStr.add(period.name().toLowerCase());
+				}
+
+				if (periodsStr.contains(text)) {
+					lightObj.setPeriod(text);
+					return (lightObj.getRates() == null) ? new StringBuilder(
+							"Ok. Set start indication value for ").append(text)
+							.append(" period").toString() : new StringBuilder(
+							"Ok. Set rate value for ").append(text)
+							.append(" period").toString();
+				}
+
+				if (null != tariffType && rates == null) {
+
+					switch (lightObj.getTariffType()) {
 					case 1:
-
+						try {
+							setDefaultRentButtons(rh);
+							lightObj.getIndications().put("t1",
+									Double.valueOf(text));
+							answer = "Primary start indications set successfully! Please set rate via simple send message with value.";
+							lightObj.initRates();
+						} catch (NumberFormatException e) {
+							logger.error(e.getMessage(), e);
+							return "Wrong format! Try again!";
+						}
 						break;
 					case 2:
-
-						break;
 					case 3:
+						try {
+							lightObj.getIndications().put(lightObj.getPeriod(),
+									Double.valueOf(text));
+							answer = new StringBuilder("Start indication for ")
+									.append(lightObj.getPeriod())
+									.append(" period set succefully")
+									.toString();
+						} catch (NumberFormatException e) {
+							logger.error(e.getMessage(), e);
+							return "Wrong format! Try again!";
+						}
 
+						if (lightObj.isSetIndications()) {
+							List<List<String>> buttons = new ArrayList<>();
+							List<String> buttonNames = new ArrayList<>();
+							buttons.add(buttonNames);
+
+							if (lightObj.getTariffType() == 2) {
+								buttonNames.add(PrimaryLightHolder.Perionds.DAY
+										.name().toLowerCase());
+							} else {
+								buttonNames
+										.add(PrimaryLightHolder.Perionds.PEAK
+												.name().toLowerCase());
+								buttonNames
+										.add(PrimaryLightHolder.Perionds.HALF_PEAK
+												.name().toLowerCase());
+							}
+
+							buttonNames.add(PrimaryLightHolder.Perionds.NIGHT
+									.name().toLowerCase());
+							buttons.add(getButtonsList("Back to rent menu"));
+
+							try {
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(this.objectMapper
+										.writeValueAsString(getButtons(buttons)));
+							} catch (JsonProcessingException e) {
+								logger.error(e.getMessage(), e);
+							}
+
+							answer = "Primary start indications set successfully! Please set rates for it";
+							lightObj.initRates();
+						}
+						break;
+
+					default:
+						break;
+					}
+				} else if (null != rates) {
+
+					switch (lightObj.getTariffType()) {
+					case 1:
+						try {
+							lightObj.getRates().put("t1", Double.valueOf(text));
+							setPrimaryDefaultButtons(rh);
+							answer = "Primary indications and rate for light set successfully!";
+
+							try {
+								DataBaseHelper
+										.getInstance()
+										.insertPrimaryCounters(
+												this.objectMapper
+														.writeValueAsString(lightObj),
+												"light", idChat, owner);
+							} catch (JsonProcessingException e) {
+								logger.error(e.getMessage(), e);
+							}
+
+							chatObjectMapper.remove(idChat);
+							isRemoveCommand = true;
+						} catch (NumberFormatException e) {
+							logger.error(e.getMessage(), e);
+							return "Wrong format! Try again!";
+						}
+						break;
+					case 2:
+					case 3:
+						try {
+							lightObj.getRates().put(lightObj.getPeriod(),
+									Double.valueOf(text));
+							answer = new StringBuilder("Rate for ")
+									.append(lightObj.getPeriod())
+									.append(" period set succefully")
+									.toString();
+						} catch (NumberFormatException e) {
+							logger.error(e.getMessage(), e);
+							return "Wrong format! Try again!";
+						}
+
+						if (lightObj.isSetRates()) {
+							setPrimaryDefaultButtons(rh);
+							answer = "Primary indications and rate for light set successfully!";
+
+							try {
+								DataBaseHelper
+										.getInstance()
+										.insertPrimaryCounters(
+												this.objectMapper
+														.writeValueAsString(lightObj),
+												"light", idChat, owner);
+							} catch (JsonProcessingException e) {
+								logger.error(e.getMessage(), e);
+							}
+
+							chatObjectMapper.remove(idChat);
+							isRemoveCommand = true;
+						}
 						break;
 
 					default:
 						break;
 					}
 
-					answer = sb.toString();
-
-				} else {
-					// bad format
-					answer = "Wrong format! Please ";
 				}
 			}
-				break;
-			}
-
 		}
 			break;
 		default:
@@ -1033,11 +1221,7 @@ public class MessagesChecker implements Runnable {
 	private void setDefaultRentButtons(ResponseHolder rh) {
 
 		List<List<String>> buttons = new ArrayList<>();
-		List<String> buttonNames = new ArrayList<>();
-		buttons.add(buttonNames);
-
-		buttonNames.add("Back to rent menu");
-		buttonNames.add("Home");
+		buttons.add(getButtonsList("Back to rent menu", "Home"));
 
 		try {
 			rh.setNeedReplyMarkup(true);
@@ -1046,5 +1230,32 @@ public class MessagesChecker implements Runnable {
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 		}
+	}
+
+	private void setPrimaryDefaultButtons(ResponseHolder rh) {
+
+		List<List<String>> buttons = new ArrayList<>();
+		buttons.add(getButtonsList("set water", "set rent amount", "set light"));
+		buttons.add(getButtonsList("back to rent menu"));
+
+		try {
+			rh.setNeedReplyMarkup(true);
+			rh.setReplyMarkup(this.objectMapper
+					.writeValueAsString(getButtons(buttons)));
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+		}
+
+	}
+
+	private List<String> getButtonsList(String... strings) {
+
+		List<String> buttons = new ArrayList<>();
+		int len = strings.length;
+
+		for (int i = 0; i < len; i++) {
+			buttons.add(strings[i]);
+		}
+		return buttons;
 	}
 }

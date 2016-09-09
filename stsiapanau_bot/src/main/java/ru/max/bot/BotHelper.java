@@ -36,6 +36,9 @@ public class BotHelper {
 	public static ConcurrentHashMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
 
 	static {
+		commandMapper.put("set light", "/setprimarylight");
+		commandMapper.put("set water", "/setprimarywater");
+		commandMapper.put("set rent amount", "/setprimaryrentamount");
 		commandMapper.put("rent", "/rent");
 		commandMapper.put("back to rent menu", "/rent");
 		commandMapper.put("calc", "/calc");

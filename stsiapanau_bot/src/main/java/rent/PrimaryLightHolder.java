@@ -2,35 +2,74 @@ package rent;
 
 import java.util.HashMap;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+/**
+ * Hold information about primary counters of light
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
+@JsonIgnoreProperties({"setRates", "setIndications"})
 public class PrimaryLightHolder {
+
+	private Integer tariffType;
+	private String period;
 
 	/**
 	 * key - name value - indicator
 	 */
-	private HashMap<String, String> indications;
+	private final HashMap<String, Double> indications = new HashMap<>();
 
 	/**
 	 * key - name value - tariff price
 	 */
-	private HashMap<String, String> rates;
+	private HashMap<String, Double> rates;
 
 	public PrimaryLightHolder() {
 
 	}
 
-	public HashMap<String, String> getIndications() {
+	public HashMap<String, Double> getIndications() {
 		return this.indications;
 	}
 
-	public HashMap<String, String> getRates() {
+	public HashMap<String, Double> getRates() {
 		return this.rates;
 	}
 
-	public void setIndications(HashMap<String, String> indications) {
-		this.indications = indications;
+	public Integer getTariffType() {
+		return this.tariffType;
 	}
 
-	public void setRates(HashMap<String, String> rates) {
-		this.rates = rates;
+	public void setTariffType(Integer tariffType) {
+		this.tariffType = tariffType;
+	}
+
+	public boolean isSetIndications() {
+		return (this.indications.size() == this.tariffType) ? true : false;
+	}
+
+	public boolean isSetRates() {
+		return (this.rates.size() == this.tariffType) ? true : false;
+	}
+
+	public String getPeriod() {
+		return this.period;
+	}
+
+	public void setPeriod(String period) {
+		this.period = period;
+	}
+
+	public void initRates() {
+		if (null == this.rates) {
+			this.rates = new HashMap<>();
+		}
+	}
+
+	public static enum Perionds {
+
+		DAY, NIGHT, PEAK, HALF_PEAK
 	}
 }
