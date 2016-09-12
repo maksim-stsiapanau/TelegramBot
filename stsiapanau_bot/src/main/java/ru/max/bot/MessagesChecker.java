@@ -14,30 +14,31 @@ import jackson.bot.message.IncomeMessage;
 import jackson.bot.message.Message;
 import jackson.bot.message.Result;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import rent.PrimaryLightHolder;
 import rent.PrimaryLightHolder.Perionds;
+import rent.PrimaryWaterHolder;
 import rent.RentHolder;
+import rent.WaterHolder;
 import telegram.api.KeyboardButton;
 import telegram.api.ReplyKeyboardMarkup;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
 
@@ -57,39 +58,6 @@ public class MessagesChecker implements Runnable {
 
 	public MessagesChecker(String telegramApiUrl) {
 		this.telegramApiUrl = telegramApiUrl;
-//		this.objectMapper.configure(
-//				DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		try {
-			PrimaryLightHolder plh = this.objectMapper.readValue(
-					(String) DataBaseHelper.getInstance().getFirstValue(
-							"rent_const", "light",
-							Filters.eq("id_chat", "90301737")),
-					PrimaryLightHolder.class);
-			System.out.println(plh.getPeriod());
-			System.out.println("indications");
-			for (Entry<String, Double> entry : plh.getIndications().entrySet()) {
-				System.out.println(entry.getKey());
-				System.out.println(entry.getValue());
-			}
-
-			System.out.println("rates");
-
-			for (Entry<String, Double> entry : plh.getRates().entrySet()) {
-				System.out.println(entry.getKey());
-				System.out.println(entry.getValue());
-			}
-		} catch (JsonParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		System.out.println("Finish");
 	}
 
 	@Override
@@ -515,7 +483,7 @@ public class MessagesChecker implements Runnable {
 								break;
 							case "/getrates": {
 								answer = DataBaseHelper.getInstance().getRates(
-										id);
+										id, this.objectMapper);
 								if (answer.length() == 0) {
 									answer = "Rates are empty!";
 								}
@@ -695,7 +663,22 @@ public class MessagesChecker implements Runnable {
 							}
 
 								break;
+							case "/setprimarywater": {
+								chatObjectMapper.put(id,
+										new PrimaryWaterHolder());
+								List<List<String>> buttons = new ArrayList<>();
+								buttons.add(getButtonsList("hot", "cold"));
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(this.objectMapper
+										.writeValueAsString(getButtons(buttons)));
+								answer = "Choose type of water for setting primary indications?";
+							}
+
+								break;
 							case "/setprimaryrentamount":
+								answer = "Ok. Send simple message with rent amount per month";
 								break;
 							case "/setprimarylight": {
 								chatObjectMapper.put(id,
@@ -974,6 +957,468 @@ public class MessagesChecker implements Runnable {
 			}
 		}
 			break;
+		case "/setprimarywater": {
+
+			isRemoveCommand = false;
+
+			PrimaryWaterHolder pwh = (PrimaryWaterHolder) chatObjectMapper
+					.get(idChat);
+
+			if (text.equalsIgnoreCase("back")) {
+				List<List<String>> buttons = new ArrayList<>();
+
+				buttons.add(getButtonsList("hot", "cold"));
+				buttons.add(getButtonsList("Back to rent menu"));
+
+				rh.setNeedReplyMarkup(true);
+				try {
+					rh.setReplyMarkup(this.objectMapper
+							.writeValueAsString(getButtons(buttons)));
+				} catch (JsonProcessingException e) {
+					logger.error(e.getMessage(), e);
+				}
+
+				pwh.setWaitValue(false);
+				pwh.setWaterSet(false);
+				pwh.setTypeOfWater(null);
+				return "Choose type of water for setting primary indications?";
+			}
+
+			String typeOfWater = pwh.getTypeOfWater();
+
+			if (null == typeOfWater) {
+				// check back
+
+				if (pwh.getCountColdWaterCounter() != null
+						&& pwh.getCountHotWaterCounter() != null) {
+					List<List<String>> buttons = new ArrayList<>();
+					Map<Integer, WaterHolder> waterHolder;
+					logger.trace("Back button was tap");
+					Integer countCounters = 0;
+					switch (text) {
+					case "hot": {
+						countCounters = pwh.getCountHotWaterCounter();
+						pwh.setTypeOfWater(text);
+						waterHolder = pwh.getHotWater();
+
+					}
+						break;
+					case "cold": {
+						countCounters = pwh.getCountColdWaterCounter();
+						pwh.setTypeOfWater(text);
+						waterHolder = pwh.getColdWater();
+					}
+						break;
+
+					default: {
+						activeCommand.remove(idChat);
+						setPrimaryDefaultButtons(rh);
+						return "Wrong format! Water can be hot or cold. Set primary water indications and rates again";
+					}
+					}
+
+					if (null != waterHolder) {
+						int addCount = 0;
+						for (Entry<Integer, WaterHolder> entry : waterHolder
+								.entrySet()) {
+
+							String done = null;
+							try {
+								done = new String(Hex.decodeHex("E29C85"
+										.toCharArray()), "UTF-8");
+							} catch (UnsupportedEncodingException
+									| DecoderException e) {
+								logger.error(e.getMessage(), e);
+							}
+
+							if (entry.getValue().getAlias() != null) {
+								buttons.add(getButtonsList(done + " "
+										+ entry.getValue().getAlias()));
+							} else {
+								buttons.add(getButtonsList(entry.getKey()
+										.toString().toLowerCase()));
+							}
+							++addCount;
+						}
+
+						if (addCount < countCounters) {
+							for (int i = addCount; i < countCounters; i++) {
+								buttons.add(getButtonsList(String
+										.valueOf(i + 1)));
+							}
+						}
+
+					} else {
+						for (int i = 0; i < countCounters; i++) {
+							buttons.add(getButtonsList(String.valueOf(i + 1)));
+						}
+
+					}
+					buttons.add(getButtonsList("Back"));
+					buttons.add(getButtonsList("Back to rent menu"));
+
+					rh.setNeedReplyMarkup(true);
+					try {
+						rh.setReplyMarkup(this.objectMapper
+								.writeValueAsString(getButtons(buttons)));
+					} catch (JsonProcessingException e) {
+						logger.error(e.getMessage(), e);
+					}
+
+					answer = new StringBuilder("Ok. You have ")
+							.append(countCounters).append(" counter of ")
+							.append(pwh.getTypeOfWater())
+							.append(" water. Set primary indications for it")
+							.toString();
+					pwh.setWaterSet(true);
+
+				} else {
+
+					switch (text) {
+					case "hot":
+						pwh.setTypeOfWater(text);
+						break;
+					case "cold":
+						pwh.setTypeOfWater(text);
+						break;
+
+					default: {
+						activeCommand.remove(idChat);
+						setPrimaryDefaultButtons(rh);
+						return "Wrong format! Water can be hot or cold. Set primary water indications and rates again";
+					}
+					}
+					answer = new StringBuilder("What number of counters for ")
+							.append(text).append(" water you have?").toString();
+				}
+			} else {
+				if (pwh.isWaterSet()) {
+					// create water objects
+
+					switch (typeOfWater) {
+					case "hot": {
+						if ((null == pwh.getHotWater() || pwh.getHotWater()
+								.size() < pwh.getCountHotWaterCounter())
+								&& !pwh.isWaitValue()) {
+							Integer counter = Integer.valueOf(text);
+							StringBuilder sb = new StringBuilder(
+									"Ok. Set primary indication for counter number ")
+									.append(counter);
+							pwh.setHotWater();
+							pwh.getHotWater().put(counter,
+									new WaterHolder(typeOfWater));
+							if (pwh.getCountHotWaterCounter() > 1) {
+								answer = sb
+										.append(". Please use this format:\n value alias")
+										.toString();
+							} else {
+								answer = sb.append(
+										". Please use this format:\n value")
+										.toString();
+							}
+
+							pwh.setWaitValue(true);
+						} else {
+							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
+									.getHotWater()).lastKey();
+
+							if (pwh.getCountHotWaterCounter() > 1) {
+								String[] temp = text.trim().split(" ");
+
+								pwh.getHotWater()
+										.get(lastKey)
+										.setPrimaryIndication(
+												Double.valueOf(temp[0]));
+								pwh.getHotWater().get(lastKey)
+										.setAlias(temp[1]);
+
+							} else {
+								pwh.getHotWater()
+										.get(lastKey)
+										.setPrimaryIndication(
+												Double.valueOf(text));
+							}
+
+							answer = new StringBuilder(
+									"Ok. Value for counter number ")
+									.append(lastKey)
+									.append(" is set successful").toString();
+
+							pwh.setWaitValue(false);
+
+							if (lastKey == pwh.getCountHotWaterCounter()) {
+								pwh.setWaterSet(false);
+								pwh.setTypeOfWater(null);
+
+								List<List<String>> buttons = new ArrayList<>();
+								buttons.add(getButtonsList("hot", "cold"));
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rh.setNeedReplyMarkup(true);
+								try {
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+								} catch (JsonProcessingException e) {
+									logger.error(e.getMessage(), e);
+								}
+
+								answer = "Indications for hot water set successfully";
+
+							}
+
+						}
+
+					}
+						break;
+					case "cold": {
+						if ((null == pwh.getColdWater() || pwh.getColdWater()
+								.size() < pwh.getCountColdWaterCounter())
+								&& !pwh.isWaitValue()) {
+							Integer counter = Integer.valueOf(text);
+							StringBuilder sb = new StringBuilder(
+									"Ok. Set primary indication for counter number ")
+									.append(counter);
+
+							pwh.setColdWater();
+							pwh.getColdWater().put(counter,
+									new WaterHolder(typeOfWater));
+							if (pwh.getCountColdWaterCounter() > 1) {
+								answer = sb
+										.append(". Please use this format:\n value alias")
+										.toString();
+							} else {
+								answer = sb.append(
+										". Please use this format:\n value")
+										.toString();
+							}
+							pwh.setWaitValue(true);
+						} else {
+							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
+									.getColdWater()).lastKey();
+							if (pwh.getCountHotWaterCounter() > 1) {
+								String[] temp = text.trim().split(" ");
+
+								pwh.getColdWater()
+										.get(lastKey)
+										.setPrimaryIndication(
+												Double.valueOf(temp[0]));
+								pwh.getColdWater().get(lastKey)
+										.setAlias(temp[1]);
+
+							} else {
+								pwh.getColdWater()
+										.get(lastKey)
+										.setPrimaryIndication(
+												Double.valueOf(text));
+							}
+
+							answer = new StringBuilder(
+									"Ok. Set primary indication for counter number ")
+									.append(lastKey)
+									.append(" is set successful").toString();
+
+							pwh.setWaitValue(false);
+
+							if (lastKey == pwh.getCountHotWaterCounter()) {
+								pwh.setWaterSet(false);
+								pwh.setTypeOfWater(null);
+
+								List<List<String>> buttons = new ArrayList<>();
+								buttons.add(getButtonsList("hot", "cold"));
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rh.setNeedReplyMarkup(true);
+								try {
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+								} catch (JsonProcessingException e) {
+									logger.error(e.getMessage(), e);
+								}
+
+								answer = "Indications for cold water set successfully";
+
+							}
+						}
+
+					}
+						break;
+					default:
+						break;
+					}
+
+					// check finish set
+
+					if (pwh.isSetWaterIndications() && !pwh.isWaitValue()) {
+						List<List<String>> buttons = new ArrayList<>();
+
+						buttons.add(getButtonsList("hot", "cold",
+								"outfall rate"));
+
+						buttons.add(getButtonsList("Back to rent menu"));
+
+						rh.setNeedReplyMarkup(true);
+						try {
+							rh.setReplyMarkup(this.objectMapper
+									.writeValueAsString(getButtons(buttons)));
+						} catch (JsonProcessingException e) {
+
+							logger.error(e.getMessage(), e);
+						}
+
+						answer = "Indications for cold and hot water set successfully! Set rates for it";
+						pwh.setRatesSet(true);
+						pwh.setTypeOfWater("rate");
+					}
+
+				} else {
+
+					if (pwh.isRatesSet()) {
+
+						if (!pwh.isWaitValue()) {
+							switch (text) {
+							case "hot":
+							case "cold":
+							case "outfall rate":
+								pwh.setTypeOfRates(text);
+								pwh.setWaitValue(true);
+								answer = new StringBuilder("Ok. Set rate for ")
+										.append(text).append(" water")
+										.toString();
+								break;
+
+							default:
+								break;
+							}
+						} else {
+							switch (pwh.getTypeOfRates()) {
+							case "hot":
+								pwh.setHotWaterRate(Double.valueOf(text));
+								break;
+							case "cold":
+								pwh.setColdWaterRate(Double.valueOf(text));
+								break;
+							case "outfall rate":
+								pwh.setOutfallRate(Double.valueOf(text));
+								break;
+							default:
+								break;
+							}
+							answer = new StringBuilder("Ok. Rate for ")
+									.append(pwh.getTypeOfRates())
+									.append(" water set successfully")
+									.toString();
+							pwh.setWaitValue(false);
+						}
+
+						if (pwh.isSetRates()) {
+							setPrimaryDefaultButtons(rh);
+							answer = "Primary indications and rate for water set successfully!";
+
+							System.out.println(pwh.getHotWaterRate());
+							System.out.println(pwh.getColdWaterRate());
+							System.out.println(pwh.getOutfallRate());
+
+							System.out.println("Cold water");
+							for (Entry<Integer, WaterHolder> entry : pwh
+									.getColdWater().entrySet()) {
+
+								System.out.println(entry.getKey());
+								System.out.println(entry.getValue().getAlias());
+								System.out.println(entry.getValue()
+										.getPrimaryIndication());
+
+							}
+
+							System.out.println("Hot water");
+							for (Entry<Integer, WaterHolder> entry : pwh
+									.getHotWater().entrySet()) {
+
+								System.out.println(entry.getKey());
+								System.out.println(entry.getValue().getAlias());
+								System.out.println(entry.getValue()
+										.getPrimaryIndication());
+
+							}
+
+							try {
+								DataBaseHelper
+										.getInstance()
+										.insertPrimaryCounters(
+												this.objectMapper
+														.writeValueAsString(pwh),
+												"water", idChat, owner);
+							} catch (JsonProcessingException e) {
+								logger.error(e.getMessage(), e);
+							}
+
+							chatObjectMapper.remove(idChat);
+							isRemoveCommand = true;
+						}
+					} else {
+
+						Integer countCounters = null;
+
+						try {
+							countCounters = Integer.valueOf(text);
+							List<List<String>> buttons = new ArrayList<>();
+
+							for (int i = 0; i < countCounters; i++) {
+								buttons.add(getButtonsList(String
+										.valueOf(i + 1)));
+							}
+
+							if (countCounters > 1) {
+								buttons.add(getButtonsList("Back"));
+							}
+							buttons.add(getButtonsList("Back to rent menu"));
+
+							rh.setNeedReplyMarkup(true);
+							rh.setReplyMarkup(this.objectMapper
+									.writeValueAsString(getButtons(buttons)));
+
+							answer = new StringBuilder("Ok. You have ")
+									.append(countCounters)
+									.append(" counter of ")
+									.append(pwh.getTypeOfWater())
+									.append(" water. Set primary indications for it")
+									.toString();
+
+						} catch (NumberFormatException
+								| JsonProcessingException e) {
+							logger.error(e.getMessage(), e);
+							return "Wrong format! Count of counters must be a number. Try again";
+						}
+
+						switch (typeOfWater) {
+						case "hot":
+							pwh.setCountHotWaterCounter(countCounters);
+							break;
+						case "cold":
+							pwh.setCountColdWaterCounter(countCounters);
+							break;
+						default:
+							break;
+						}
+
+						pwh.setWaterSet(true);
+					}
+				}
+			}
+		}
+			break;
+		case "/setprimaryrentamount": {
+			try {
+				Double rentAmount = Double.valueOf(text);
+				if (DataBaseHelper.getInstance().insertPrimaryCounters(
+						rentAmount, "rent_amount", idChat, owner)) {
+					answer = "Rent amount set successful";
+				}
+			} catch (NumberFormatException e) {
+				answer = "Wrong format! Rent amount must be a number";
+				logger.error(e.getMessage(), e);
+			}
+		}
+			break;
 		case "/setprimarylight": {
 			isRemoveCommand = false;
 
@@ -1031,7 +1476,7 @@ public class MessagesChecker implements Runnable {
 			} else {
 
 				Integer tariffType = lightObj.getTariffType();
-				HashMap<String, Double> rates = lightObj.getRates();
+				Map<String, Double> rates = lightObj.getRates();
 
 				Perionds[] periods = PrimaryLightHolder.Perionds.values();
 				List<String> periodsStr = new ArrayList<>();
@@ -1248,13 +1693,13 @@ public class MessagesChecker implements Runnable {
 
 	}
 
-	private List<String> getButtonsList(String... strings) {
+	private List<String> getButtonsList(String... buttonsNames) {
 
 		List<String> buttons = new ArrayList<>();
-		int len = strings.length;
+		int len = buttonsNames.length;
 
 		for (int i = 0; i < len; i++) {
-			buttons.add(strings[i]);
+			buttons.add(buttonsNames[i]);
 		}
 		return buttons;
 	}

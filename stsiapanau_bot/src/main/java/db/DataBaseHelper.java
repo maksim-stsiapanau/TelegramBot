@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,8 +21,11 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
 
+import rent.PrimaryLightHolder;
+import rent.PrimaryWaterHolder;
 import rent.RentHolder;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -101,7 +105,7 @@ public class DataBaseHelper {
 	 * 
 	 * @return message with rates
 	 */
-	public String getRates(String chatId) {
+	public String getRates(String chatId, ObjectMapper mapper) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -110,17 +114,35 @@ public class DataBaseHelper {
 					.getCollection("rent_const")
 					.find(Filters.eq("id_chat", chatId)).first());
 			document.ifPresent(doc -> {
-				sb.append("Rates:\n").append("Rent amount: ")
-						.append(doc.get("rent_amount")).append(" rub.")
-						.append("\nT1: ").append(doc.get("t1_rate"))
-						.append(" rub.").append("\nT2: ")
-						.append(doc.get("t2_rate")).append(" rub.")
-						.append("\nT3: ").append(doc.get("t3_rate"))
-						.append(" rub.").append("\nHot water: ")
-						.append(doc.get("hw_rate")).append(" rub.")
-						.append("\nCold water: ").append(doc.get("cw_rate"))
-						.append(" rub.").append("\nOutfall: ")
-						.append(doc.get("outfall_rate")).append(" rub.");
+
+				sb.append("Rent amount: ").append(doc.get("rent_amount"))
+						.append(" rub.").append("\n\nLight");
+
+				try {
+					PrimaryLightHolder plh = mapper.readValue(
+							(String) doc.get("light"), PrimaryLightHolder.class);
+
+					for (Entry<String, Double> entry : plh.getRates()
+							.entrySet()) {
+						sb.append("\n").append(entry.getKey()).append(": ")
+								.append(entry.getValue()).append(" rub");
+					}
+
+					sb.append("\n\nWater\n");
+
+					PrimaryWaterHolder pwh = mapper.readValue(
+							(String) doc.get("water"), PrimaryWaterHolder.class);
+
+					sb.append("Hot water: ").append(pwh.getHotWaterRate())
+							.append(" rub.").append("\nCold water: ")
+							.append(pwh.getColdWaterRate()).append(" rub.")
+							.append("\nOutfall: ").append(pwh.getOutfallRate())
+							.append(" rub.");
+
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+
 			});
 		} catch (Exception e) {
 			logger.error("Can't get rates month! Error: %s", e.getMessage(), e);
@@ -454,7 +476,7 @@ public class DataBaseHelper {
 						this.db.getCollection("rent_const")
 								.find(Filters.eq("id_chat", idChat)).first(),
 						new Document("$set", new Document(field, obj)));
-				
+
 			} else {
 				this.db.getCollection("rent_const").insertOne(
 						new Document(field, obj).append("id_chat", idChat)
@@ -462,6 +484,7 @@ public class DataBaseHelper {
 
 			}
 		} catch (Exception e) {
+			status = false;
 			logger.error("Can't insert primary values for %s! Error: %s",
 					e.getMessage(), field, e);
 		}
@@ -763,16 +786,25 @@ public class DataBaseHelper {
 	 */
 	public boolean existRentUser(String chatId) {
 
-		Optional<Document> rates = Optional.empty();
+		Optional<Document> rentConsts = Optional.empty();
 
 		try {
-			rates = Optional.ofNullable(this.db.getCollection("rent_const")
+			rentConsts = Optional.ofNullable(this.db
+					.getCollection("rent_const")
 					.find(Filters.eq("id_chat", chatId)).first());
+
+			if (rentConsts.isPresent()) {
+
+				return (rentConsts.get().get("light") != null
+						&& rentConsts.get().get("rent_amount") != null && rentConsts
+						.get().get("water") != null) ? true : false;
+			}
+
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
 
-		return rates.isPresent();
+		return false;
 	}
 
 	private static class LazyDbHolder {

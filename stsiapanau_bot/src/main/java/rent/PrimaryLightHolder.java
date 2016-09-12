@@ -1,6 +1,7 @@
 package rent;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -10,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @author Maksim Stepanov
  * @email maksim.stsiapanau@gmail.com
  */
-@JsonIgnoreProperties({"setRates", "setIndications"})
+@JsonIgnoreProperties({ "setRates", "setIndications" })
 public class PrimaryLightHolder {
 
 	private Integer tariffType;
@@ -24,17 +25,17 @@ public class PrimaryLightHolder {
 	/**
 	 * key - name value - tariff price
 	 */
-	private HashMap<String, Double> rates;
+	private Map<String, Double> rates;
 
 	public PrimaryLightHolder() {
 
 	}
 
-	public HashMap<String, Double> getIndications() {
+	public Map<String, Double> getIndications() {
 		return this.indications;
 	}
 
-	public HashMap<String, Double> getRates() {
+	public Map<String, Double> getRates() {
 		return this.rates;
 	}
 
