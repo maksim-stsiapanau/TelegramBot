@@ -3,6 +3,7 @@ package ru.max.bot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +13,8 @@ import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,14 +54,14 @@ public class BotHelper {
 		commandMapper.put("change rates", "/changerates");
 		commandMapper.put("add month", "/rent_add");
 		commandMapper.put("new primary counters", "/setprimarycounters");
-		commandMapper.put("month", "/setmonth");
+		commandMapper.put("name of month", "/setmonth");
 		commandMapper.put("light", "/setlight");
 		commandMapper.put("water", "/setwater");
 		commandMapper.put("takeout", "/settakeout");
 		commandMapper.put("details", "/getstatbymonth");
-		commandMapper.put("clear all", "/purge");
+		commandMapper.put("remove rent", "/purge");
 		commandMapper.put("remove payment", "/delmonthstat");
-		commandMapper.put("added statistics", "/getstat");
+		commandMapper.put("current statistic", "/getstat");
 		commandMapper.put("add events", "/setevents");
 		commandMapper.put("see events", "/getevents");
 		commandMapper.put("remove all events", "/delall");
@@ -135,5 +138,15 @@ public class BotHelper {
 			result = true;
 		}
 		return result;
+	}
+
+	public static String getEmoji(String hexCode) {
+		String done = null;
+		try {
+			done = new String(Hex.decodeHex(hexCode.toCharArray()), "UTF-8");
+		} catch (UnsupportedEncodingException | DecoderException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return done;
 	}
 }

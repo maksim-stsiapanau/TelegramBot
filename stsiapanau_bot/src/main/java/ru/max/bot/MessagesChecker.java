@@ -7,6 +7,7 @@ import static ru.max.bot.BotHelper.callApiGet;
 import static ru.max.bot.BotHelper.chatObjectMapper;
 import static ru.max.bot.BotHelper.checkStrByRegexp;
 import static ru.max.bot.BotHelper.commandMapper;
+import static ru.max.bot.BotHelper.getEmoji;
 import static ru.max.bot.BotHelper.rentData;
 import jackson.bot.message.Chat;
 import jackson.bot.message.Entity;
@@ -14,20 +15,20 @@ import jackson.bot.message.IncomeMessage;
 import jackson.bot.message.Message;
 import jackson.bot.message.Result;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bson.Document;
+import org.joda.time.DateTime;
 
 import rent.PrimaryLightHolder;
 import rent.PrimaryLightHolder.Perionds;
@@ -35,10 +36,12 @@ import rent.PrimaryWaterHolder;
 import rent.RentHolder;
 import rent.WaterHolder;
 import telegram.api.KeyboardButton;
+import telegram.api.ReplyKeyboardHide;
 import telegram.api.ReplyKeyboardMarkup;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
 
@@ -131,6 +134,12 @@ public class MessagesChecker implements Runnable {
 
 	}
 
+	/**
+	 * 
+	 * @param message
+	 *            -
+	 * @return
+	 */
 	private Response parseMessage(IncomeMessage message) {
 
 		List<Result> result = message.getResult();
@@ -166,7 +175,7 @@ public class MessagesChecker implements Runnable {
 						String text = null;
 						text = messageObj.get().getText();
 						text = text.trim().toLowerCase();
-
+						System.out.println(text);
 						boolean isMapper = commandMapper.containsKey(text);
 
 						String answer = "I can't answer at this question(";
@@ -195,7 +204,7 @@ public class MessagesChecker implements Runnable {
 
 								StringBuilder sb = new StringBuilder()
 										.append("Hi. I am bot. I can process next operations:\n")
-										.append("/rent (Rent) - calculating rent per month\n");
+										.append("Rent (/rent) - calculating rent per month\n");
 
 								if (owner.equalsIgnoreCase("Maksim Stepanov")
 										|| owner.equalsIgnoreCase("Yuliya Stepanova")) {
@@ -221,30 +230,10 @@ public class MessagesChecker implements Runnable {
 								break;
 							case "/ada": {
 								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = null;
-
-								for (int i = 0; i < 3; i++) {
-									buttonNames = new ArrayList<>();
-									buttons.add(buttonNames);
-									switch (i) {
-									case 0: {
-										buttonNames.add("Add events");
-										buttonNames.add("See events");
-									}
-										break;
-									case 1: {
-										buttonNames.add("Remove event");
-										buttonNames.add("Remove all events");
-									}
-										break;
-									case 2: {
-										buttonNames.add("Home");
-									}
-										break;
-									default:
-										break;
-									}
-								}
+								buttons.add(getButtonsList("add events",
+										"see events"));
+								buttons.add(getButtonsList("remove event",
+										"remove all events"));
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
@@ -343,88 +332,54 @@ public class MessagesChecker implements Runnable {
 								break;
 							case "/rent": {
 								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = null;
 
 								if (DataBaseHelper.getInstance().existRentUser(
-										id)) {
-									for (int i = 0; i < 3; i++) {
-										buttonNames = new ArrayList<>();
-										buttons.add(buttonNames);
-										switch (i) {
-										case 0: {
-											buttonNames.add("Home");
-											buttonNames.add("Details");
-											buttonNames.add("Add month");
-										}
-											break;
-										case 1: {
-											buttonNames.add("Payments");
-											buttonNames.add("Rates");
-											buttonNames.add("Change rates");
-										}
-											break;
-										case 2: {
-											buttonNames
-													.add("New primary counters");
-											buttonNames.add("Remove payment");
-											buttonNames.add("Clear all");
-										}
-											break;
-										default:
-											break;
-										}
+										id, this.objectMapper)) {
+
+									if (DataBaseHelper.getInstance()
+											.existPayment(id)) {
+										buttons.add(getButtonsList("add month",
+												"details", "payments"));
+										buttons.add(getButtonsList("rates",
+												"change rates"));
+										buttons.add(getButtonsList(
+												"remove payment", "remove rent"));
+										answer = new StringBuilder()
+												.append("You can control your rent by sending these commands:\n")
+												.append("add month (/rent_add) - add month of rent\n")
+												.append("details (/getstatbymonth) - getting rent statistics by month\n")
+												.append("payments (/gethistory) - return total amount by months\n")
+												.append("rates (/getrates) - return all rates for rent\n")
+												.append("change rates (/changerates) - change rates for rent\n")
+												.append("remove payment (/delmonthstat) - remove statistics by month\n")
+												.append("remove rent (/purge) - remove statistics for all months of rent and primary values\n")
+												.toString();
+									} else {
+										buttons.add(getButtonsList("add month"));
+										buttons.add(getButtonsList("rates",
+												"change rates"));
+										buttons.add(getButtonsList("New primary counters"));
+										answer = new StringBuilder()
+												.append("You can control your rent by sending these commands:\n")
+												.append("add month (/rent_add) - add month of rent\n")
+												.append("rates (/getrates) - return all rates for rent\n")
+												.append("change rates (/changerates) - change rates for rent\n")
+												.append("new primary counters (/setprimarycounters)- set starting indications")
+												.toString();
 									}
 
-									answer = new StringBuilder()
-											.append("You can control your rent by sending these commands:\n")
-											.append("/rent_add (Add month) - add month of rent\n")
-											.append("/getrates (Rates) - return all rates for rent\n")
-											.append("/changerates (Change rates) - change rates for rent\n")
-											.append("/gethistory (Payments) - return total amount by months\n")
-											.append("/purge (Clear all) - remove statistics for all months of rent and primary values\n")
-											.append("/delmonthstat (Remove payment) - remove statistics by month\n")
-											.append("/getstatbymonth (Details) - getting rent statistics by month\n")
-											.append("/setprimarycounters (New primary counters)- set starting indications")
-											.toString();
 								} else {
-									for (int i = 0; i < 2; i++) {
-										buttonNames = new ArrayList<>();
-										buttons.add(buttonNames);
-										switch (i) {
-										case 0:
-											buttonNames
-													.add("New primary counters");
-											break;
-										case 1:
-											buttonNames.add("Home");
-											break;
-										default:
-											break;
-										}
+									buttons.add(getButtonsList("new primary counters"));
 
-									}
 									answer = new StringBuilder()
 											.append("Hi new user! For access to all functions for control your rent you must set primary counters. Please use this command:\n")
-											.append("/start (Home) - return to start menu\n")
-											.append("/setprimarycounters (New primary counters)- set starting indications")
+											.append("new primary counters (/setprimarycounters)- set starting indications")
 											.toString();
 								}
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(this.objectMapper
 										.writeValueAsString(getButtons(buttons)));
-
-								answer = new StringBuilder()
-										.append("You can control rent by sending these commands:\n")
-										.append("/rent_add (Add month) - add month of rent\n")
-										.append("/getrates (Rates) - return all rates for rent\n")
-										.append("/changerates (Change rates) - change rates for rent\n")
-										.append("/gethistory (Payments) - return total amount by months\n")
-										.append("/purge (Clear all) - remove statistics for all months of rent and primary values\n")
-										.append("/delmonthstat (Remove payment) - remove statistics by month\n")
-										.append("/getstatbymonth (Details) - getting rent statistics by month\n")
-										.append("/setprimarycounters (New primary counters)- set starting indications")
-										.toString();
 
 								if (rentData.containsKey(id)) {
 									rentData.remove(id);
@@ -432,52 +387,21 @@ public class MessagesChecker implements Runnable {
 							}
 								break;
 							case "/rent_add": {
-								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = null;
+								RentHolder rent = new RentHolder(id, owner,
+										this.objectMapper);
+								rent.initIndications(this.objectMapper);
+								rentData.put(id, Optional.of(rent));
 
-								for (int i = 0; i < 4; i++) {
-									buttonNames = new ArrayList<>();
-									buttons.add(buttonNames);
-									switch (i) {
-									case 0: {
-										buttonNames.add("Month");
-										buttonNames.add("Light");
-									}
-										break;
-									case 1: {
-										buttonNames.add("Water");
-										buttonNames.add("Takeout");
-									}
-										break;
-									case 2: {
-										buttonNames.add("Calc");
-									}
-										break;
-									case 3: {
-										buttonNames.add("Added statistics");
-										buttonNames.add("Back to rent menu");
-									}
-										break;
-									default:
-										break;
-									}
-								}
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								rentData.put(id,
-										Optional.of(new RentHolder(id, owner)));
+								defaultAddMonthButtons(rent, rh);
 
 								answer = new StringBuilder(
 										"I'm ready for set indications.\nYou can use next commands:\n")
-										.append("/setmonth (Month) - set rent month\n")
-										.append("/setlight (Light) - set indications for light\n")
-										.append("/setwater (Water) - set indications for water, outfall calculating automatically\n")
-										.append("/settakeout (Takeout) - set takeout from rent\n")
-										.append("/calc (Calc) - return total amount for month\n")
-										.append("/getstat (Added statistics)- return rent statistics for adding month\n")
+										.append("name of month (/setmonth) - set the name of the rental month\n")
+										.append("light (/setlight) - set indications for light\n")
+										.append("water (/setwater) - set indications for water, outfall calculating automatically\n")
+										.append("takeout (/settakeout) - set takeout from rent\n")
+										.append("calc (/calc) - return total amount for month\n")
+										.append("current statistic (/getstat)- return rent statistics for adding month\n")
 										.toString();
 							}
 								break;
@@ -498,18 +422,18 @@ public class MessagesChecker implements Runnable {
 									buttons.add(buttonNames);
 									switch (i) {
 									case 0: {
-										buttonNames.add("Hot water");
-										buttonNames.add("Cold water");
+										buttonNames.add("hot water");
+										buttonNames.add("cold water");
 									}
 										break;
 									case 1: {
-										buttonNames.add("Outfall");
-										buttonNames.add("Light rate");
+										buttonNames.add("outfall");
+										buttonNames.add("light rate");
 									}
 										break;
 									case 2: {
-										buttonNames.add("Rent amount");
-										buttonNames.add("Back to rent menu");
+										buttonNames.add("rent amount");
+										buttonNames.add("back to rent menu");
 									}
 										break;
 									default:
@@ -563,7 +487,7 @@ public class MessagesChecker implements Runnable {
 								if (buttons.size() > 0) {
 									List<String> buttonNames = new ArrayList<>();
 									buttons.add(buttonNames);
-									buttonNames.add("Back to rent menu");
+									buttonNames.add("back to rent menu");
 									rh.setNeedReplyMarkup(true);
 									rh.setReplyMarkup(this.objectMapper
 											.writeValueAsString(getButtons(buttons)));
@@ -590,14 +514,15 @@ public class MessagesChecker implements Runnable {
 									answer = "Oops error! Can't delete information!";
 								}
 								break;
-							case "/getstat": {
-								Optional<RentHolder> rentHolder = rentData
-										.get(id);
-								answer = (null != rentHolder) ? rentHolder
-										.get().getStatAddedMonth()
-										: "Rent mode is not active. For activate rent mode use 'Add month' command";
-							}
-								break;
+							// case "/getstat": {
+							// Optional<RentHolder> rentHolder = rentData
+							// .get(id);
+							// answer = (null != rentHolder) ? rentHolder
+							// .get().getStatAddedMonth()
+							// :
+							// "Rent mode is not active. For activate rent mode use 'Add month' command";
+							// }
+							// break;
 							case "/getstatbymonth": {
 								List<List<String>> buttons = new ArrayList<>();
 
@@ -643,17 +568,97 @@ public class MessagesChecker implements Runnable {
 							case "/settakeout":
 								answer = "For set takeout information please use this format:\n\namount description\n\ndescription restriction - use underscore instead of space";
 								break;
-							case "/setmonth":
-								answer = "For set rent month please use this format:\n\nshortmonthname_year\nExample:may_2016";
+							case "/setmonth": {
+								List<List<String>> buttons = new ArrayList<>();
+								DateTime date = new DateTime();
+								buttons.add(getButtonsList(date.toString("MMM",
+										Locale.US) + "_" + date.getYear()));
+
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(this.objectMapper
+										.writeValueAsString(getButtons(buttons)));
+								answer = "For set rent for current month - tap on button below.\n\nFor set rent for another month please use this format:\n\nshortmonthname_year\nExample:may_2016";
+							}
 								break;
-							case "/setlight":
-								answer = "For set light indications please use this format:\n\nt1=value t2=value t3=value";
+							case "/setlight": {
+								RentHolder rent = rentData.get(id).get();
+								Map<String, Double> lightPrimary = rent
+										.getLightPrimary().getIndications();
+
+								if (lightPrimary.size() > 1) {
+									List<List<String>> buttons = new ArrayList<>();
+									List<String> buttonNames = new ArrayList<>();
+									buttons.add(buttonNames);
+
+									lightPrimary.entrySet().stream()
+											.forEach(e -> {
+												buttonNames.add(e.getKey());
+											});
+
+									rh.setNeedReplyMarkup(true);
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+
+									answer = "You have "
+											+ lightPrimary.size()
+											+ " counter of light. Set the value for it use buttons below";
+								} else {
+									answer = "You have one-tariff counter of light. Set the value for it";
+								}
+
+							}
 								break;
-							case "/setwater":
-								answer = "For set water indications please use this format:\n\nhot=value cold=value";
+							case "/setwater": {
+								Optional<RentHolder> rentHolder = rentData
+										.get(id);
+								PrimaryWaterHolder water = rentHolder.get()
+										.getWaterPrimary();
+
+								List<List<String>> buttons = new ArrayList<>();
+								if (water.getHotWater().size() > 1) {
+									water.getHotWater()
+											.entrySet()
+											.stream()
+											.forEach(
+													e -> {
+														buttons.add(getButtonsList("hot-"
+																+ e.getValue()
+																		.getAlias()));
+													});
+								} else {
+									buttons.add(getButtonsList("hot"));
+								}
+
+								if (water.getColdWater().size() > 1) {
+									water.getColdWater()
+											.entrySet()
+											.stream()
+											.forEach(
+													e -> {
+														buttons.add(getButtonsList("cold-"
+																+ e.getValue()
+																		.getAlias()));
+													});
+
+								} else {
+									buttons.add(getButtonsList("cold"));
+								}
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rentHolder.get().setWaterButtons(buttons);
+
+								rh.setNeedReplyMarkup(true);
+								try {
+									rh.setReplyMarkup(this.objectMapper
+											.writeValueAsString(getButtons(buttons)));
+								} catch (JsonProcessingException e) {
+									logger.error(e.getMessage(), e);
+								}
+								answer = "Ok. Set indications for it";
+							}
 								break;
 							case "/setprimarycounters": {
-								setPrimaryDefaultButtons(rh);
+								defaultPrimaryButtons(rh);
 								answer = new StringBuilder()
 										.append("You can set next primary counters via follows commands:\n\n")
 										.append("/setprimarywater (set water) - set primary counters for water\n")
@@ -857,7 +862,6 @@ public class MessagesChecker implements Runnable {
 			break;
 		case "/calc": {
 			setDefaultRentButtons(rh);
-
 			if (checkStrByRegexp(text, "[a-z]{2,3}$")) {
 				Boolean outfall = (text.equalsIgnoreCase("yes")) ? true : false;
 				Optional<RentHolder> rentHolder = rentData.get(idChat);
@@ -882,11 +886,19 @@ public class MessagesChecker implements Runnable {
 
 			if (null != rentHolder) {
 				if (data.length == 2) {
-					rentHolder.get().setTakeout(Double.parseDouble(data[0]));
-					rentHolder.get().setTakeoutDesc(data[1]);
+					Double takeout = null;
+					try {
+						takeout = Double.parseDouble(data[0]);
+					} catch (NumberFormatException e) {
+						logger.error(e.getMessage(), e);
+						return "Takeout is not a number! Takeout must be a number.";
+					}
+					rentHolder.get().setTakeout(takeout);
+					rentHolder.get().setTakeoutDescription(data[1]);
 					answer = "Takeout set successfully!";
+					defaultAddMonthButtons(rentHolder.get(), rh);
 				} else {
-					answer = "Wrong format. For check format use command - /rent";
+					return "Wrong format! Please use this format: amount description (";
 				}
 			} else {
 				answer = "Rent mode is not active. For activate rent mode use /rent_add command";
@@ -898,9 +910,10 @@ public class MessagesChecker implements Runnable {
 				Optional<RentHolder> rentHolder = rentData.get(idChat);
 
 				if (null != rentHolder) {
-					rentHolder.get().setMonthRent(text);
-					answer = "Month " + rentHolder.get().getMonthRent()
+					rentHolder.get().setMonthOfRent(text);
+					answer = "Month " + rentHolder.get().getMonthOfRent()
 							+ " set successfully!";
+					defaultAddMonthButtons(rentHolder.get(), rh);
 				} else {
 					answer = "Rent mode is not active. For activate rent mode use /rent_add command";
 				}
@@ -910,57 +923,183 @@ public class MessagesChecker implements Runnable {
 		}
 			break;
 		case "/setlight": {
-			String[] data = text.split(" ");
-			Optional<RentHolder> rentHolder = rentData.get(String
-					.valueOf(idChat));
+			isRemoveCommand = false;
+			RentHolder rentHolder = rentData.get(String.valueOf(idChat)).get();
 
-			if (null != rentHolder) {
-				if (data.length == 3) {
-					rentHolder.get().setCountT1(
-							Double.parseDouble(data[0].split("=")[1]));
-					rentHolder.get().setCountT2(
-							Double.parseDouble(data[1].split("=")[1]));
-					rentHolder.get().setCountT3(
-							Double.parseDouble(data[2].split("=")[1]));
-					answer = "Light set successfully! t1="
-							+ rentHolder.get().getCountT1() + "; t2="
-							+ rentHolder.get().getCountT2() + "; t3="
-							+ rentHolder.get().getCountT3();
-					rentHolder.get().setSetLight(true);
-				} else {
-					answer = "Wrong format. For check format use command - /rent";
+			Map<String, Double> lightPrimary = rentHolder.getLightPrimary()
+					.getIndications();
+
+			int sizeLightPrimary = lightPrimary.size();
+
+			if (sizeLightPrimary == 1) {
+				try {
+					rentHolder.getCurrentLightIndications().put("t1",
+							Double.parseDouble(text));
+				} catch (NumberFormatException e) {
+					logger.error(e.getMessage(), e);
+					return "Wrong format indication must be a number! Try again";
 				}
+
+				if (rentHolder.isLightSet()) {
+					isRemoveCommand = true;
+					answer = "Light set successfully";
+					defaultAddMonthButtons(rentHolder, rh);
+				}
+
+			} else if (rentHolder.getLightPrimary().getIndications()
+					.containsKey(text)) {
+				rentHolder.getCurrentLightIndications().put(text, 0.0);
+				rentHolder.setLightTypeActive(text);
+
+				answer = "Set light intication for " + text;
+
 			} else {
-				answer = "Rent mode is not active. For activate rent mode use /rent_add command";
+				String lightActiveType = rentHolder.getLightTypeActive();
+
+				if (null != lightActiveType) {
+					try {
+						rentHolder.getCurrentLightIndications().put(
+								lightActiveType, Double.parseDouble(text));
+					} catch (NumberFormatException e) {
+						logger.error(e.getMessage(), e);
+						return "Wrong format indication must be a number! Try again";
+					}
+				} else {
+					return "Choose type of light (buttons below)";
+				}
+
+				if (rentHolder.isLightSet()) {
+					isRemoveCommand = true;
+					answer = "Light set successfully";
+					defaultAddMonthButtons(rentHolder, rh);
+				}
 			}
 		}
 			break;
 		case "/setwater": {
-			String[] data = text.split(" ");
-			Optional<RentHolder> rentHolder = rentData.get(idChat);
+			isRemoveCommand = false;
+			RentHolder rentHolder = rentData.get(idChat).get();
+			if (null != rentHolder.getWaterTypeActive()) {
 
-			if (null != rentHolder) {
-				if (data.length == 2) {
-					rentHolder.get().setCountColdWater(
-							Double.parseDouble(data[1].split("=")[1]));
-					rentHolder.get().setCountHotWater(
-							Double.parseDouble(data[0].split("=")[1]));
-					answer = "Water set successfully! Hot="
-							+ rentHolder.get().getCountHotWater() + "; Cold: "
-							+ rentHolder.get().getCountColdWater();
-					rentHolder.get().setSetWater(true);
-				} else {
-					answer = "Wrong format. For check format use command - /rent";
+				// wait value for indication
+				switch (rentHolder.getWaterTypeActive()) {
+				case "hot":
+					((NavigableMap<Integer, WaterHolder>) rentHolder
+							.getCurrentHotWaterIndications()).lastEntry()
+							.getValue()
+							.setPrimaryIndication(Double.parseDouble(text));
+					break;
+				case "cold":
+					((NavigableMap<Integer, WaterHolder>) rentHolder
+							.getCurrentColdWaterIndications()).lastEntry()
+							.getValue()
+							.setPrimaryIndication(Double.parseDouble(text));
+					break;
+				default:
+					break;
 				}
+
+				answer = rentHolder.getWaterTypeActive() + " set successfully";
+				defaultWaterButtons(rentHolder, rh,
+						rentHolder.getButtonWaterCounterActive());
+
+				rentHolder.setWaterTypeActive(null);
+
+				if (rentHolder.isWaterSet()) {
+					isRemoveCommand = true;
+					answer = "Water set successfully";
+					defaultAddMonthButtons(rentHolder, rh);
+
+					System.out.println("Current cold");
+					rentHolder.getCurrentColdWaterIndications().entrySet()
+							.stream().forEach(e -> {
+								System.out.println(e.getKey());
+								System.out.println(e.getValue().getAlias());
+							});
+
+					System.out.println("last cold");
+					rentHolder.getWaterPrimary().getColdWater().entrySet()
+							.stream().forEach(e -> {
+								System.out.println(e.getKey());
+								System.out.println(e.getValue().getAlias());
+							});
+
+					System.out.println("Current hot");
+					rentHolder.getCurrentHotWaterIndications().entrySet()
+							.stream().forEach(e -> {
+								System.out.println(e.getKey());
+								System.out.println(e.getValue().getAlias());
+							});
+
+					System.out.println("last hot");
+					rentHolder.getWaterPrimary().getHotWater().entrySet()
+							.stream().forEach(e -> {
+								System.out.println(e.getKey());
+								System.out.println(e.getValue().getAlias());
+							});
+
+				}
+
 			} else {
-				answer = "Rent mode is not active. For activate rent mode use /rent_add command";
+				String[] temp = text.split("-");
+				int tempSize = temp.length;
+
+				switch (temp[0]) {
+				case "hot": {
+					Map<Integer, WaterHolder> hotWater = rentHolder
+							.getCurrentHotWaterIndications();
+					if (tempSize > 1) {
+						// with alias
+						if (hotWater.isEmpty()) {
+							hotWater.put(1, new WaterHolder(temp[1]));
+
+						} else {
+							hotWater.put(
+									((NavigableMap<Integer, WaterHolder>) hotWater)
+											.lastKey() + 1, new WaterHolder(
+											temp[1]));
+						}
+					} else {
+						hotWater.put(1, new WaterHolder());
+					}
+					rentHolder.setWaterTypeActive("hot");
+
+				}
+					break;
+				case "cold": {
+					Map<Integer, WaterHolder> coldWater = rentHolder
+							.getCurrentColdWaterIndications();
+					if (tempSize > 1) {
+
+						// with alias
+						if (coldWater.isEmpty()) {
+							coldWater.put(1, new WaterHolder(temp[1]));
+
+						} else {
+							coldWater
+									.put(((NavigableMap<Integer, WaterHolder>) coldWater)
+											.lastKey() + 1, new WaterHolder(
+											temp[1]));
+						}
+
+					} else {
+						coldWater.put(1, new WaterHolder());
+					}
+					rentHolder.setWaterTypeActive("cold");
+				}
+					break;
+				default:
+					break;
+				}
+
+				answer = "Set value for " + text;
+				rentHolder.setButtonWaterCounterActive(text);
+				hideKeybord(rh);
 			}
 		}
 			break;
 		case "/setprimarywater": {
-
 			isRemoveCommand = false;
-
 			PrimaryWaterHolder pwh = (PrimaryWaterHolder) chatObjectMapper
 					.get(idChat);
 
@@ -968,7 +1107,7 @@ public class MessagesChecker implements Runnable {
 				List<List<String>> buttons = new ArrayList<>();
 
 				buttons.add(getButtonsList("hot", "cold"));
-				buttons.add(getButtonsList("Back to rent menu"));
+				buttons.add(getButtonsList("back to rent menu"));
 
 				rh.setNeedReplyMarkup(true);
 				try {
@@ -987,8 +1126,8 @@ public class MessagesChecker implements Runnable {
 			String typeOfWater = pwh.getTypeOfWater();
 
 			if (null == typeOfWater) {
-				// check back
 
+				// check back
 				if (pwh.getCountColdWaterCounter() != null
 						&& pwh.getCountHotWaterCounter() != null) {
 					List<List<String>> buttons = new ArrayList<>();
@@ -1012,7 +1151,7 @@ public class MessagesChecker implements Runnable {
 
 					default: {
 						activeCommand.remove(idChat);
-						setPrimaryDefaultButtons(rh);
+						defaultPrimaryButtons(rh);
 						return "Wrong format! Water can be hot or cold. Set primary water indications and rates again";
 					}
 					}
@@ -1022,18 +1161,9 @@ public class MessagesChecker implements Runnable {
 						for (Entry<Integer, WaterHolder> entry : waterHolder
 								.entrySet()) {
 
-							String done = null;
-							try {
-								done = new String(Hex.decodeHex("E29C85"
-										.toCharArray()), "UTF-8");
-							} catch (UnsupportedEncodingException
-									| DecoderException e) {
-								logger.error(e.getMessage(), e);
-							}
-
 							if (entry.getValue().getAlias() != null) {
-								buttons.add(getButtonsList(done + " "
-										+ entry.getValue().getAlias()));
+								buttons.add(getButtonsList(getEmoji("E29C85")
+										+ " " + entry.getValue().getAlias()));
 							} else {
 								buttons.add(getButtonsList(entry.getKey()
 										.toString().toLowerCase()));
@@ -1054,8 +1184,8 @@ public class MessagesChecker implements Runnable {
 						}
 
 					}
-					buttons.add(getButtonsList("Back"));
-					buttons.add(getButtonsList("Back to rent menu"));
+					buttons.add(getButtonsList("back"));
+					buttons.add(getButtonsList("back to rent menu"));
 
 					rh.setNeedReplyMarkup(true);
 					try {
@@ -1084,7 +1214,7 @@ public class MessagesChecker implements Runnable {
 
 					default: {
 						activeCommand.remove(idChat);
-						setPrimaryDefaultButtons(rh);
+						defaultPrimaryButtons(rh);
 						return "Wrong format! Water can be hot or cold. Set primary water indications and rates again";
 					}
 					}
@@ -1093,8 +1223,8 @@ public class MessagesChecker implements Runnable {
 				}
 			} else {
 				if (pwh.isWaterSet()) {
-					// create water objects
 
+					// create water objects
 					switch (typeOfWater) {
 					case "hot": {
 						if ((null == pwh.getHotWater() || pwh.getHotWater()
@@ -1247,14 +1377,13 @@ public class MessagesChecker implements Runnable {
 					}
 
 					// check finish set
-
 					if (pwh.isSetWaterIndications() && !pwh.isWaitValue()) {
 						List<List<String>> buttons = new ArrayList<>();
 
 						buttons.add(getButtonsList("hot", "cold",
 								"outfall rate"));
 
-						buttons.add(getButtonsList("Back to rent menu"));
+						buttons.add(getButtonsList("back to rent menu"));
 
 						rh.setNeedReplyMarkup(true);
 						try {
@@ -1311,34 +1440,7 @@ public class MessagesChecker implements Runnable {
 						}
 
 						if (pwh.isSetRates()) {
-							setPrimaryDefaultButtons(rh);
 							answer = "Primary indications and rate for water set successfully!";
-
-							System.out.println(pwh.getHotWaterRate());
-							System.out.println(pwh.getColdWaterRate());
-							System.out.println(pwh.getOutfallRate());
-
-							System.out.println("Cold water");
-							for (Entry<Integer, WaterHolder> entry : pwh
-									.getColdWater().entrySet()) {
-
-								System.out.println(entry.getKey());
-								System.out.println(entry.getValue().getAlias());
-								System.out.println(entry.getValue()
-										.getPrimaryIndication());
-
-							}
-
-							System.out.println("Hot water");
-							for (Entry<Integer, WaterHolder> entry : pwh
-									.getHotWater().entrySet()) {
-
-								System.out.println(entry.getKey());
-								System.out.println(entry.getValue().getAlias());
-								System.out.println(entry.getValue()
-										.getPrimaryIndication());
-
-							}
 
 							try {
 								DataBaseHelper
@@ -1350,7 +1452,7 @@ public class MessagesChecker implements Runnable {
 							} catch (JsonProcessingException e) {
 								logger.error(e.getMessage(), e);
 							}
-
+							defaultPrimaryButtons(rh);
 							chatObjectMapper.remove(idChat);
 							isRemoveCommand = true;
 						}
@@ -1368,9 +1470,9 @@ public class MessagesChecker implements Runnable {
 							}
 
 							if (countCounters > 1) {
-								buttons.add(getButtonsList("Back"));
+								buttons.add(getButtonsList("back"));
 							}
-							buttons.add(getButtonsList("Back to rent menu"));
+							buttons.add(getButtonsList("back to rent menu"));
 
 							rh.setNeedReplyMarkup(true);
 							rh.setReplyMarkup(this.objectMapper
@@ -1413,6 +1515,7 @@ public class MessagesChecker implements Runnable {
 						rentAmount, "rent_amount", idChat, owner)) {
 					answer = "Rent amount set successful";
 				}
+				defaultPrimaryButtons(rh);
 			} catch (NumberFormatException e) {
 				answer = "Wrong format! Rent amount must be a number";
 				logger.error(e.getMessage(), e);
@@ -1438,7 +1541,7 @@ public class MessagesChecker implements Runnable {
 							.name().toLowerCase(),
 							PrimaryLightHolder.Perionds.NIGHT.name()
 									.toLowerCase()));
-					buttons.add(getButtonsList("Back to rent menu"));
+					buttons.add(getButtonsList("back to rent menu"));
 
 					try {
 						rh.setNeedReplyMarkup(true);
@@ -1458,7 +1561,7 @@ public class MessagesChecker implements Runnable {
 									.toLowerCase(),
 							PrimaryLightHolder.Perionds.NIGHT.name()
 									.toLowerCase()));
-					buttons.add(getButtonsList("Back to rent menu"));
+					buttons.add(getButtonsList("back to rent menu"));
 
 					try {
 						rh.setNeedReplyMarkup(true);
@@ -1542,7 +1645,7 @@ public class MessagesChecker implements Runnable {
 
 							buttonNames.add(PrimaryLightHolder.Perionds.NIGHT
 									.name().toLowerCase());
-							buttons.add(getButtonsList("Back to rent menu"));
+							buttons.add(getButtonsList("back to rent menu"));
 
 							try {
 								rh.setNeedReplyMarkup(true);
@@ -1566,7 +1669,6 @@ public class MessagesChecker implements Runnable {
 					case 1:
 						try {
 							lightObj.getRates().put("t1", Double.valueOf(text));
-							setPrimaryDefaultButtons(rh);
 							answer = "Primary indications and rate for light set successfully!";
 
 							try {
@@ -1580,6 +1682,7 @@ public class MessagesChecker implements Runnable {
 								logger.error(e.getMessage(), e);
 							}
 
+							defaultPrimaryButtons(rh);
 							chatObjectMapper.remove(idChat);
 							isRemoveCommand = true;
 						} catch (NumberFormatException e) {
@@ -1602,7 +1705,6 @@ public class MessagesChecker implements Runnable {
 						}
 
 						if (lightObj.isSetRates()) {
-							setPrimaryDefaultButtons(rh);
 							answer = "Primary indications and rate for light set successfully!";
 
 							try {
@@ -1616,6 +1718,7 @@ public class MessagesChecker implements Runnable {
 								logger.error(e.getMessage(), e);
 							}
 
+							defaultPrimaryButtons(rh);
 							chatObjectMapper.remove(idChat);
 							isRemoveCommand = true;
 						}
@@ -1666,7 +1769,7 @@ public class MessagesChecker implements Runnable {
 	private void setDefaultRentButtons(ResponseHolder rh) {
 
 		List<List<String>> buttons = new ArrayList<>();
-		buttons.add(getButtonsList("Back to rent menu", "Home"));
+		buttons.add(getButtonsList("back to rent menu"));
 
 		try {
 			rh.setNeedReplyMarkup(true);
@@ -1677,10 +1780,32 @@ public class MessagesChecker implements Runnable {
 		}
 	}
 
-	private void setPrimaryDefaultButtons(ResponseHolder rh) {
+	private void defaultPrimaryButtons(ResponseHolder rh) {
 
 		List<List<String>> buttons = new ArrayList<>();
-		buttons.add(getButtonsList("set water", "set rent amount", "set light"));
+		Optional<Document> document = Optional.ofNullable(DataBaseHelper
+				.getInstance().getFirstDocByFilter("rent_const",
+						Filters.eq("id_chat", rh.getChatId())));
+		String light = "set light";
+		String water = "set water";
+		String rentAmount = "set rent amount";
+
+		if (document.isPresent()) {
+			if (null != document.get().get("light")) {
+				light = getEmoji("E29C85") + " " + light;
+			}
+
+			if (null != document.get().get("water")) {
+				water = getEmoji("E29C85") + " " + water;
+			}
+
+			if (null != document.get().get("rent_amount")) {
+				rentAmount = getEmoji("E29C85") + " " + rentAmount;
+			}
+		}
+
+		buttons.add(getButtonsList(water, rentAmount, light));
+
 		buttons.add(getButtonsList("back to rent menu"));
 
 		try {
@@ -1691,6 +1816,63 @@ public class MessagesChecker implements Runnable {
 			logger.error(e.getMessage(), e);
 		}
 
+	}
+
+	private void defaultAddMonthButtons(RentHolder rent, ResponseHolder rh) {
+		List<List<String>> buttons = new ArrayList<>();
+
+		buttons.add(getButtonsList(
+				(null == rent.getMonthOfRent()) ? "name of month"
+						: getEmoji("E29C85") + " name of month", (rent
+						.isLightSet()) ? getEmoji("E29C85") + " light"
+						: "light"));
+		buttons.add(getButtonsList(rent.isWaterSet() ? getEmoji("E29C85")
+				+ " water" : "water", (null == rent.getTakeout()) ? "takeout"
+				: getEmoji("E29C85") + " takeout"));
+		buttons.add(getButtonsList("current statistic", "calc"));
+		buttons.add(getButtonsList("back to rent menu"));
+
+		rh.setNeedReplyMarkup(true);
+		try {
+			rh.setReplyMarkup(this.objectMapper
+					.writeValueAsString(getButtons(buttons)));
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
+	private void hideKeybord(ResponseHolder rh) {
+		rh.setNeedReplyMarkup(true);
+		try {
+			rh.setReplyMarkup(this.objectMapper
+					.writeValueAsString(new ReplyKeyboardHide()));
+		} catch (JsonProcessingException e) {
+
+			logger.error(e.getMessage());
+		}
+	}
+
+	private void defaultWaterButtons(RentHolder rent, ResponseHolder rh,
+			String fillCounter) {
+		rh.setNeedReplyMarkup(true);
+		try {
+			List<List<String>> list = rent.getWaterButtons();
+			if (null != fillCounter) {
+
+				list.stream().forEach(e -> {
+					int index = e.indexOf(fillCounter);
+					if (index != -1) {
+						String done = e.get(index);
+						e.remove(index);
+						e.add(index, getEmoji("E29C85") + " " + done);
+					}
+				});
+			}
+			rh.setReplyMarkup(this.objectMapper
+					.writeValueAsString(getButtons(list)));
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+		}
 	}
 
 	private List<String> getButtonsList(String... buttonsNames) {

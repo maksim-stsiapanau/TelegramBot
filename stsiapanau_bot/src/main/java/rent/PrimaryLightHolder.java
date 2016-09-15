@@ -2,6 +2,7 @@ package rent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -20,7 +21,7 @@ public class PrimaryLightHolder {
 	/**
 	 * key - name value - indicator
 	 */
-	private final HashMap<String, Double> indications = new HashMap<>();
+	private final Map<String, Double> indications = new TreeMap<>();
 
 	/**
 	 * key - name value - tariff price

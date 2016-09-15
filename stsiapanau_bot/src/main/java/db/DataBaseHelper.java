@@ -2,6 +2,7 @@ package db;
 
 import static ru.max.bot.BotHelper.adaEvents;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
 
+import rent.LastIndicationsHolder;
 import rent.PrimaryLightHolder;
 import rent.PrimaryWaterHolder;
 import rent.RentHolder;
@@ -503,61 +505,61 @@ public class DataBaseHelper {
 
 		boolean status = true;
 
-		try {
-			this.db.getCollection("rent_stat").insertOne(
-					new Document("month", rh.getMonthRent())
-							.append("t1_indication", rh.getCountT1())
-							.append("t1_rate", rh.getT1Rate())
-							.append("t2_indication", rh.getCountT2())
-							.append("t2_rate", rh.getT2Rate())
-							.append("t3_indication", rh.getCountT3())
-							.append("t3_rate", rh.getT3Rate())
-							.append("t1_used", rh.getUsedT1())
-							.append("t2_used", rh.getUsedT2())
-							.append("t3_used", rh.getUsedT3())
-							.append("t1_price", rh.getPriceT1())
-							.append("t2_price", rh.getPriceT2())
-							.append("t3_price", rh.getPriceT3())
-							.append("hot_water_indication",
-									rh.getCountHotWater())
-							.append("hot_water_rate", rh.getHotWaterRate())
-							.append("hot_water_used", rh.getUsedHotWater())
-							.append("hot_water_price", rh.getPriceHotWater())
-							.append("cold_water_indication",
-									rh.getCountColdWater())
-							.append("cold_water_rate", rh.getColdWaterRate())
-							.append("cold_water_used", rh.getUsedColdWater())
-							.append("cold_water_price", rh.getPriceColdWater())
-							.append("outfall_indication", rh.getCountOutFall())
-							.append("outfall_rate", rh.getOutFallRate())
-							.append("outfall_price", rh.getPriceOutFall())
-							.append("total_amount", rh.getTotal(null))
-							.append("rent_amount", rh.getRentAmount())
-							.append("takeout", rh.getTakeout())
-							.append("takeout_desc", rh.getTakeoutDesc())
-							.append("id_chat", rh.getIdChat())
-							.append("who_set", rh.getOwner()));
-		} catch (Exception e) {
-			status = false;
-			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
-					e);
-		}
-
-		try {
-			this.db.getCollection("rent_const").updateOne(
-					this.db.getCollection("rent_const")
-							.find(Filters.eq("id_chat", rh.getIdChat()))
-							.first(),
-					new Document("$set", new Document("t1_last", rh
-							.getCountT1()).append("t2_last", rh.getCountT2())
-							.append("t3_last", rh.getCountT3())
-							.append("hw_last", rh.getCountHotWater())
-							.append("cw_last", rh.getCountColdWater())));
-		} catch (Exception e) {
-			status = false;
-			logger.error("Can't update last indications! Error: %s",
-					e.getMessage(), e);
-		}
+//		try {
+//			this.db.getCollection("rent_stat").insertOne(
+//					new Document("month", rh.getMonthRent())
+//							.append("t1_indication", rh.getCountT1())
+//							.append("t1_rate", rh.getT1Rate())
+//							.append("t2_indication", rh.getCountT2())
+//							.append("t2_rate", rh.getT2Rate())
+//							.append("t3_indication", rh.getCountT3())
+//							.append("t3_rate", rh.getT3Rate())
+//							.append("t1_used", rh.getUsedT1())
+//							.append("t2_used", rh.getUsedT2())
+//							.append("t3_used", rh.getUsedT3())
+//							.append("t1_price", rh.getPriceT1())
+//							.append("t2_price", rh.getPriceT2())
+//							.append("t3_price", rh.getPriceT3())
+//							.append("hot_water_indication",
+//									rh.getCountHotWater())
+//							.append("hot_water_rate", rh.getHotWaterRate())
+//							.append("hot_water_used", rh.getUsedHotWater())
+//							.append("hot_water_price", rh.getPriceHotWater())
+//							.append("cold_water_indication",
+//									rh.getCountColdWater())
+//							.append("cold_water_rate", rh.getColdWaterRate())
+//							.append("cold_water_used", rh.getUsedColdWater())
+//							.append("cold_water_price", rh.getPriceColdWater())
+//							.append("outfall_indication", rh.getCountOutFall())
+//							.append("outfall_rate", rh.getOutFallRate())
+//							.append("outfall_price", rh.getPriceOutFall())
+//							.append("total_amount", rh.getTotal(null))
+//							.append("rent_amount", rh.getRentAmount())
+//							.append("takeout", rh.getTakeout())
+//							.append("takeout_desc", rh.getTakeoutDesc())
+//							.append("id_chat", rh.getIdChat())
+//							.append("who_set", rh.getOwner()));
+//		} catch (Exception e) {
+//			status = false;
+//			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
+//					e);
+//		}
+//
+//		try {
+//			this.db.getCollection("rent_const").updateOne(
+//					this.db.getCollection("rent_const")
+//							.find(Filters.eq("id_chat", rh.getIdChat()))
+//							.first(),
+//					new Document("$set", new Document("t1_last", rh
+//							.getCountT1()).append("t2_last", rh.getCountT2())
+//							.append("t3_last", rh.getCountT3())
+//							.append("hw_last", rh.getCountHotWater())
+//							.append("cw_last", rh.getCountColdWater())));
+//		} catch (Exception e) {
+//			status = false;
+//			logger.error("Can't update last indications! Error: %s",
+//					e.getMessage(), e);
+//		}
 		return status;
 	}
 
@@ -784,7 +786,7 @@ public class DataBaseHelper {
 	 *            - unique chat id
 	 * @return existing flag
 	 */
-	public boolean existRentUser(String chatId) {
+	public boolean existRentUser(String chatId, ObjectMapper mapper) {
 
 		Optional<Document> rentConsts = Optional.empty();
 
@@ -794,10 +796,40 @@ public class DataBaseHelper {
 					.find(Filters.eq("id_chat", chatId)).first());
 
 			if (rentConsts.isPresent()) {
-
-				return (rentConsts.get().get("light") != null
+				boolean status = (rentConsts.get().get("light") != null
 						&& rentConsts.get().get("rent_amount") != null && rentConsts
 						.get().get("water") != null) ? true : false;
+
+				if (status && rentConsts.get().get("last_indications") == null) {
+					LastIndicationsHolder lastIndications = new LastIndicationsHolder();
+					try {
+						lastIndications.setLight(mapper.readValue(
+								(String) rentConsts.get().get("light"),
+								PrimaryLightHolder.class).getIndications());
+
+						lastIndications.setColdWater(mapper.readValue(
+								(String) rentConsts.get().get("water"),
+								PrimaryWaterHolder.class).getColdWater());
+						lastIndications.setHotWater(mapper.readValue(
+								(String) rentConsts.get().get("water"),
+								PrimaryWaterHolder.class).getHotWater());
+
+						this.db.getCollection("rent_const")
+								.updateOne(
+										this.db.getCollection("rent_const")
+												.find(Filters.eq("id_chat",
+														chatId)).first(),
+										new Document(
+												"$set",
+												new Document(
+														"last_indications",
+														mapper.writeValueAsString(lastIndications))));
+
+					} catch (IOException e) {
+						logger.error(e.getMessage(), e);
+					}
+				}
+				return status;
 			}
 
 		} catch (Exception e) {
@@ -805,6 +837,28 @@ public class DataBaseHelper {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check exist rent statistic by user
+	 * 
+	 * @param chatId
+	 *            - unique chat id
+	 * @return existing flag
+	 */
+	public boolean existPayment(String chatId) {
+
+		Optional<Document> rentStat = Optional.empty();
+
+		try {
+			rentStat = Optional.ofNullable(this.db.getCollection("rent_stat")
+					.find(Filters.eq("id_chat", chatId)).first());
+
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return rentStat.isPresent();
 	}
 
 	private static class LazyDbHolder {
