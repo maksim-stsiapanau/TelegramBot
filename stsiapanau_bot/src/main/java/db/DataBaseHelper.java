@@ -1,6 +1,7 @@
 package db;
 
 import static ru.max.bot.BotHelper.adaEvents;
+import static ru.max.bot.BotHelper.objectMapper;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -22,10 +23,11 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
 
+import rent.Counter;
 import rent.LastIndicationsHolder;
 import rent.PrimaryLightHolder;
 import rent.PrimaryWaterHolder;
-import rent.RentHolder;
+import rent.RentMonthHolder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
@@ -172,98 +174,123 @@ public class DataBaseHelper {
 									Filters.eq("id_chat", idChat))));
 			document.ifPresent(doc -> {
 
-				// prices
-				double t1Price = (double) doc.get("t1_price");
-				double t2Price = (double) doc.get("t2_price");
-				double t3Price = (double) doc.get("t3_price");
-				double totalLightPrice = t1Price + t2Price + t3Price;
-				double hotWaterPrice = (double) doc.get("hot_water_price");
-				double coldWaterPrice = (double) doc.get("cold_water_price");
-				double outfallPrice = (double) doc.get("outfall_price");
-				double totalWater = hotWaterPrice + coldWaterPrice
-						+ outfallPrice;
-
-				sb.append("Added by: ")
-						.append(doc.get("who_set"))
-						.append("\nMonth: ")
-						.append(doc.get("month"))
-						.append("\nLight\n")
-						.append("T1 indication: ")
-						.append(doc.get("t1_indication"))
-						.append("; used: ")
-						.append(String.format("%.2f", doc.get("t1_used")))
-						.append("; price: ")
-						.append(String.format("%.2f", t1Price))
-						.append(" rub; rate: ")
-						.append(doc.get("t1_rate"))
-						.append(" rub.")
-						.append("\nT2 indication: ")
-						.append(doc.get("t2_indication"))
-						.append("; used: ")
-						.append(String.format("%.2f", doc.get("t2_used")))
-						.append("; price: ")
-						.append(String.format("%.2f", t2Price))
-						.append(" rub; rate: ")
-						.append(doc.get("t2_rate"))
-						.append(" rub.")
-						.append("\nT3 indication: ")
-						.append(doc.get("t3_indication"))
-						.append("; used: ")
-						.append(String.format("%.2f", doc.get("t3_used")))
-						.append("; price: ")
-						.append(String.format("%.2f", t3Price))
-						.append(" rub; rate: ")
-						.append(doc.get("t3_rate"))
-						.append(" rub.")
-						.append("\n\nTotal price for light: ")
-						.append(String.format("%.2f", totalLightPrice))
-						.append(" rub.")
-						.append("\n\nWater\n")
-						.append("Hot water indication: ")
-						.append(doc.get("hot_water_indication"))
-						.append("; used: ")
-						.append(String.format("%.2f", doc.get("hot_water_used")))
-						.append("; price: ")
-						.append(String.format("%.2f", hotWaterPrice))
-						.append(" rub; rate: ")
-						.append(doc.get("hot_water_rate"))
-						.append(" rub.")
-						.append("\nCold water indication: ")
-						.append(doc.get("cold_water_indication"))
-						.append("; used: ")
-						.append(String.format("%.2f",
-								doc.get("cold_water_used")))
-						.append("; price: ")
-						.append(String.format("%.2f", coldWaterPrice))
-						.append(" rub; rate: ")
-						.append(doc.get("cold_water_rate"))
-						.append(" rub.")
-						.append("\nOutfall water indication: ")
-						.append(String.format("%.2f",
-								doc.get("outfall_indication")))
-						.append("; price: ")
-						.append(String.format("%.2f", outfallPrice))
-						.append(" rub; rate: ").append(doc.get("outfall_rate"))
-						.append(" rub.").append("\n\nTotal price for water: ")
-						.append(String.format("%.2f", totalWater))
-						.append(" rub.").append("\n\nRent Amount: ")
-						.append(doc.get("rent_amount")).append(" rub")
-						.append("\nTotal: ")
-						.append(String.format("%.2f", doc.get("total_amount")))
-						.append(" rub");
-
 				try {
-					double takeout = Double.parseDouble(String.valueOf(doc
-							.get("takeout")));
-					if (takeout > 0) {
-						sb.append("\nTakeout: ").append(takeout).append(" rub")
-								.append("\nTakeout desc: ")
-								.append(doc.get("takeout_desc"));
+					RentMonthHolder rentHolder = objectMapper.readValue(
+							(String) doc.get("stat"), RentMonthHolder.class);
+
+					sb.append("Added by: ")
+							.append(rentHolder.getOwner())
+							.append("\nMonth: ")
+							.append(rentHolder.getMonth())
+							.append("\nFinal amount: ")
+							.append(String.format("%.2f",
+									rentHolder.getTotalAmount()))
+							.append(" rub").append("\n\nLight\n");
+
+					rentHolder
+							.getLight()
+							.entrySet()
+							.stream()
+							.forEach(
+									e -> {
+										sb.append(e.getKey())
+												.append(" - Used: ")
+												.append(e.getValue().getUsed())
+												.append("; Price: ")
+												.append(String.format("%.2f", e
+														.getValue().getPrice()))
+												.append(" rub; Rate: ")
+												.append(String.format("%.2f", e
+														.getValue().getRate()))
+												.append(" rub").append("\n");
+									});
+
+					sb.append("\nWater\n");
+
+					rentHolder
+							.getColdWater()
+							.entrySet()
+							.stream()
+							.forEach(
+									e -> {
+										String key = e.getKey();
+										Counter outfallMap = rentHolder
+												.getOutfall().get(key);
+
+										Double coldPrice = e.getValue()
+												.getPrice();
+										Double hotPrice = rentHolder
+												.getHotWater().get(key)
+												.getPrice();
+
+										Double total = coldPrice + hotPrice;
+
+										sb.append(key)
+												.append(":\nCold - Used: ")
+												.append(e.getValue().getUsed())
+												.append("; Price: ")
+												.append(String.format("%.2f",
+														coldPrice))
+												.append(" rub; Rate: ")
+												.append(String.format("%.2f", e
+														.getValue().getRate()))
+												.append(" rub")
+												.append("\n")
+												.append("Hot - Used: ")
+												.append(rentHolder
+														.getHotWater().get(key)
+														.getUsed())
+												.append("; Price: ")
+												.append(String.format("%.2f",
+														hotPrice))
+												.append(" rub; Rate: ")
+												.append(String.format("%.2f",
+														rentHolder
+																.getHotWater()
+																.get(key)
+																.getRate()))
+												.append(" rub");
+										if (null != outfallMap) {
+											Double outfallPrice = outfallMap
+													.getPrice();
+											total += outfallPrice;
+
+											sb.append("\nOutfall - Count: ")
+													.append(outfallMap
+															.getUsed())
+													.append("; Price: ")
+													.append(String.format(
+															"%.2f", outfallMap
+																	.getPrice()))
+													.append(" rub; Rate: ")
+													.append(String.format(
+															"%.2f",
+															outfallPrice));
+
+										}
+
+										sb.append(" rub\nTotal: ")
+												.append(String.format("%.2f",
+														total))
+												.append(" rub\n\n");
+
+									});
+
+					sb.append("Rent Amount: ")
+							.append(rentHolder.getRentAmount()).append(" rub");
+
+					if (null != rentHolder.getTakeout()) {
+						sb.append("\nTakeout: ")
+								.append(String.format("%.2f",
+										rentHolder.getTakeout()))
+								.append(" rub").append(" - ")
+								.append(rentHolder.getTakeoutDesc());
 					}
-				} catch (Exception e) {
-					logger.error("Can't get takeout! Error: %s",
-							e.getMessage(), e);
+
+				} catch (Exception e1) {
+					logger.error(e1.getMessage(), e1);
 				}
+
 			});
 		} catch (Exception e) {
 			logger.error("Can't get stat by month! Error: %s", e.getMessage(),
@@ -274,7 +301,7 @@ public class DataBaseHelper {
 	}
 
 	/**
-	 * Get totals amount for rent by months
+	 * Get total amount for rent by months
 	 * 
 	 * @return String message with history by months
 	 */
@@ -290,9 +317,14 @@ public class DataBaseHelper {
 			iter = docs.iterator();
 			while (iter.hasNext()) {
 				Document document = iter.next();
-				sb.append("\nMonth: ").append(document.get("month"))
+				sb.append("\nMonth: ")
+						.append(document.get("month"))
 						.append("; Total: ")
-						.append(document.get("total_amount")).append(" rub.");
+
+						.append(objectMapper.readValue(
+								(String) document.get("stat"),
+								RentMonthHolder.class).getTotalAmount())
+						.append(" rub.");
 			}
 		} catch (Exception e) {
 			logger.error("Can't get history! Error: %s", e.getMessage(), e);
@@ -321,38 +353,47 @@ public class DataBaseHelper {
 		boolean status = true;
 		boolean isLastRecord = false;
 
-		// check on last added record
-		try {
-			Optional<Document> lastRecord = Optional.ofNullable(this.db
-					.getCollection("rent_stat").find().limit(1)
-					.sort(Sorts.descending("$natural", "-1")).first());
-			if (lastRecord.isPresent()) {
-				String lastMonthAdded = lastRecord.get().getString("month");
-
-				if (lastMonthAdded.toLowerCase().equalsIgnoreCase(month)) {
-					isLastRecord = true;
-				}
-			}
-		} catch (Exception e) {
-			status = false;
-			logger.error(e.getMessage(), e);
-		}
-
-		try {
-			DeleteResult dr = this.db.getCollection("rent_stat").deleteOne(
-					Filters.and(Filters.eq("id_chat", idChat),
-							Filters.eq("month", month)));
-			logger.debug("Month %s deleted successfully! Row deleted %s",
-					month, dr.getDeletedCount());
-
-			if (isLastRecord) {
+		// check count document -> if == 1 remove all (purge)
+		if (getDocsCount("rent_stat", idChat) == 1) {
+			status = purgeAll(idChat);
+		} else {
+			// check on last added record
+			try {
 				Optional<Document> lastRecord = Optional.ofNullable(this.db
-						.getCollection("rent_stat").find().limit(1)
+						.getCollection("rent_stat")
+						.find(Filters.eq("id_chat", idChat)).limit(1)
 						.sort(Sorts.descending("$natural", "-1")).first());
-
 				if (lastRecord.isPresent()) {
+					String lastMonthAdded = lastRecord.get().getString("month");
+
+					if (lastMonthAdded.toLowerCase().equalsIgnoreCase(month)) {
+						isLastRecord = true;
+					}
+				}
+			} catch (Exception e) {
+				status = false;
+				logger.error(e.getMessage(), e);
+			}
+
+			try {
+				DeleteResult dr = this.db.getCollection("rent_stat").deleteOne(
+						Filters.and(Filters.eq("id_chat", idChat),
+								Filters.eq("month", month)));
+				logger.debug("Month %s deleted successfully! Row deleted %s",
+						month, dr.getDeletedCount());
+
+				if (isLastRecord) {
+					Document lastRecord = this.db.getCollection("rent_stat")
+							.find(Filters.eq("id_chat", idChat)).limit(1)
+							.sort(Sorts.descending("$natural", "-1")).first();
+
 					logger.debug("Last record detected!");
+
 					try {
+						RentMonthHolder rent = objectMapper.readValue(
+								(String) lastRecord.get("last_indications"),
+								RentMonthHolder.class);
+
 						this.db.getCollection("rent_const")
 								.updateOne(
 										this.db.getCollection("rent_const")
@@ -361,37 +402,22 @@ public class DataBaseHelper {
 										new Document(
 												"$set",
 												new Document(
-														"t1_last",
-														lastRecord
-																.get()
-																.get("t1_indication"))
-														.append("t2_last",
-																lastRecord
-																		.get()
-																		.get("t2_indication"))
-														.append("t3_last",
-																lastRecord
-																		.get()
-																		.get("t3_indication"))
-														.append("hw_last",
-																lastRecord
-																		.get()
-																		.get("hot_water_indication"))
-														.append("cw_last",
-																lastRecord
-																		.get()
-																		.get("cold_water_indication"))));
+														"last_indications",
+														objectMapper
+																.writeValueAsString(rent
+																		.getLastIndications()))));
 					} catch (Exception e) {
 						logger.error(
 								"Can't update last indications! Error: %s",
 								e.getMessage(), e);
 					}
-				}
 
+				}
+			} catch (Exception e) {
+				status = false;
+				logger.error("Can't purge statistics! Error: %s",
+						e.getMessage(), e);
 			}
-		} catch (Exception e) {
-			status = false;
-			logger.error("Can't purge statistics! Error: %s", e.getMessage(), e);
 		}
 		return status;
 	}
@@ -501,65 +527,37 @@ public class DataBaseHelper {
 	 *            RentHolder instance
 	 * @return boolean status execute
 	 */
-	public boolean insertMonthStat(RentHolder rh) {
+	public boolean insertMonthStat(RentMonthHolder total) {
 
 		boolean status = true;
 
-//		try {
-//			this.db.getCollection("rent_stat").insertOne(
-//					new Document("month", rh.getMonthRent())
-//							.append("t1_indication", rh.getCountT1())
-//							.append("t1_rate", rh.getT1Rate())
-//							.append("t2_indication", rh.getCountT2())
-//							.append("t2_rate", rh.getT2Rate())
-//							.append("t3_indication", rh.getCountT3())
-//							.append("t3_rate", rh.getT3Rate())
-//							.append("t1_used", rh.getUsedT1())
-//							.append("t2_used", rh.getUsedT2())
-//							.append("t3_used", rh.getUsedT3())
-//							.append("t1_price", rh.getPriceT1())
-//							.append("t2_price", rh.getPriceT2())
-//							.append("t3_price", rh.getPriceT3())
-//							.append("hot_water_indication",
-//									rh.getCountHotWater())
-//							.append("hot_water_rate", rh.getHotWaterRate())
-//							.append("hot_water_used", rh.getUsedHotWater())
-//							.append("hot_water_price", rh.getPriceHotWater())
-//							.append("cold_water_indication",
-//									rh.getCountColdWater())
-//							.append("cold_water_rate", rh.getColdWaterRate())
-//							.append("cold_water_used", rh.getUsedColdWater())
-//							.append("cold_water_price", rh.getPriceColdWater())
-//							.append("outfall_indication", rh.getCountOutFall())
-//							.append("outfall_rate", rh.getOutFallRate())
-//							.append("outfall_price", rh.getPriceOutFall())
-//							.append("total_amount", rh.getTotal(null))
-//							.append("rent_amount", rh.getRentAmount())
-//							.append("takeout", rh.getTakeout())
-//							.append("takeout_desc", rh.getTakeoutDesc())
-//							.append("id_chat", rh.getIdChat())
-//							.append("who_set", rh.getOwner()));
-//		} catch (Exception e) {
-//			status = false;
-//			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
-//					e);
-//		}
-//
-//		try {
-//			this.db.getCollection("rent_const").updateOne(
-//					this.db.getCollection("rent_const")
-//							.find(Filters.eq("id_chat", rh.getIdChat()))
-//							.first(),
-//					new Document("$set", new Document("t1_last", rh
-//							.getCountT1()).append("t2_last", rh.getCountT2())
-//							.append("t3_last", rh.getCountT3())
-//							.append("hw_last", rh.getCountHotWater())
-//							.append("cw_last", rh.getCountColdWater())));
-//		} catch (Exception e) {
-//			status = false;
-//			logger.error("Can't update last indications! Error: %s",
-//					e.getMessage(), e);
-//		}
+		try {
+			this.db.getCollection("rent_stat").insertOne(
+					new Document("month", total.getMonth())
+							.append("stat",
+									objectMapper.writeValueAsString(total))
+							.append("id_chat", total.getChatId())
+							.append("who_set", total.getOwner()));
+		} catch (Exception e) {
+			status = false;
+			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
+					e);
+		}
+
+		// update last indications
+		try {
+			this.db.getCollection("rent_const").updateOne(
+					this.db.getCollection("rent_const")
+							.find(Filters.eq("id_chat", total.getChatId()))
+							.first(),
+					new Document("$set", new Document("last_indications",
+							objectMapper.writeValueAsString(total
+									.getLastIndications()))));
+		} catch (Exception e) {
+			status = false;
+			logger.error("Can't update last indications! Error: %s",
+					e.getMessage(), e);
+		}
 		return status;
 	}
 
@@ -859,6 +857,11 @@ public class DataBaseHelper {
 		}
 
 		return rentStat.isPresent();
+	}
+
+	public long getDocsCount(String collection, String idChat) {
+		return this.db.getCollection(collection).count(
+				Filters.eq("id_chat", idChat));
 	}
 
 	private static class LazyDbHolder {

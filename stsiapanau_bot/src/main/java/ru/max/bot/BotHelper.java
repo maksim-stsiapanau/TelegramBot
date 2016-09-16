@@ -18,6 +18,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import rent.RentHolder;
 
 /**
@@ -30,6 +32,7 @@ public class BotHelper {
 
 	private static final Logger logger = LogManager.getLogger(BotHelper.class
 			.getName());
+	public static final ObjectMapper objectMapper = new ObjectMapper();
 	public static ConcurrentHashMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, Boolean> adaMode = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, Boolean> editAdaEvent = new ConcurrentHashMap<>();
@@ -53,7 +56,7 @@ public class BotHelper {
 		commandMapper.put("rates", "/getrates");
 		commandMapper.put("change rates", "/changerates");
 		commandMapper.put("add month", "/rent_add");
-		commandMapper.put("new primary counters", "/setprimarycounters");
+		commandMapper.put("new primary", "/setprimarycounters");
 		commandMapper.put("name of month", "/setmonth");
 		commandMapper.put("light", "/setlight");
 		commandMapper.put("water", "/setwater");

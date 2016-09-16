@@ -6,6 +6,13 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+/**
+ * Contains last indicators of lights and water. Used for calculating total rent
+ * by month
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
 public class LastIndicationsHolder {
 
 	private Map<String, Double> light;
@@ -17,7 +24,7 @@ public class LastIndicationsHolder {
 	}
 
 	public Map<String, Double> getLight() {
-		return light;
+		return this.light;
 	}
 
 	public void setLight(Map<String, Double> light) {
@@ -25,7 +32,7 @@ public class LastIndicationsHolder {
 	}
 
 	public Map<Integer, WaterHolder> getHotWater() {
-		return hotWater;
+		return this.hotWater;
 	}
 
 	public void setHotWater(Map<Integer, WaterHolder> hotWater) {
@@ -33,7 +40,7 @@ public class LastIndicationsHolder {
 	}
 
 	public Map<Integer, WaterHolder> getColdWater() {
-		return coldWater;
+		return this.coldWater;
 	}
 
 	public void setColdWater(Map<Integer, WaterHolder> coldWater) {
@@ -50,7 +57,7 @@ public class LastIndicationsHolder {
 								e2) -> e1, TreeMap::new));
 
 	}
-	
+
 	public <T> List<T> copyList(List<T> list) {
 		return list.stream().collect(Collectors.toList());
 	}

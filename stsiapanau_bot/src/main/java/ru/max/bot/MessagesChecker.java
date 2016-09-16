@@ -8,6 +8,7 @@ import static ru.max.bot.BotHelper.chatObjectMapper;
 import static ru.max.bot.BotHelper.checkStrByRegexp;
 import static ru.max.bot.BotHelper.commandMapper;
 import static ru.max.bot.BotHelper.getEmoji;
+import static ru.max.bot.BotHelper.objectMapper;
 import static ru.max.bot.BotHelper.rentData;
 import jackson.bot.message.Chat;
 import jackson.bot.message.Entity;
@@ -40,7 +41,6 @@ import telegram.api.ReplyKeyboardHide;
 import telegram.api.ReplyKeyboardMarkup;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
@@ -57,7 +57,6 @@ public class MessagesChecker implements Runnable {
 	private static final Logger logger = LogManager
 			.getFormatterLogger(MessagesChecker.class.getName());
 	private String telegramApiUrl;
-	private ObjectMapper objectMapper = new ObjectMapper();
 
 	public MessagesChecker(String telegramApiUrl) {
 		this.telegramApiUrl = telegramApiUrl;
@@ -72,7 +71,7 @@ public class MessagesChecker implements Runnable {
 							Optional<IncomeMessage> message = Optional.empty();
 
 							try {
-								message = Optional.ofNullable(this.objectMapper
+								message = Optional.ofNullable(objectMapper
 										.readValue(inputData,
 												IncomeMessage.class));
 							} catch (Exception e1) {
@@ -172,12 +171,14 @@ public class MessagesChecker implements Runnable {
 
 						logger.debug("ChatId: %s; Owner: %s", id, owner);
 
-						String text = null;
-						text = messageObj.get().getText();
-						text = text.trim().toLowerCase();
-						System.out.println(text);
-						boolean isMapper = commandMapper.containsKey(text);
+						String text = messageObj.get().getText();
 
+						if (text.contains(getEmoji("E29C85"))) {
+							text = text.replace(getEmoji("E29C85"), "");
+						}
+
+						text = text.trim().toLowerCase();
+						boolean isMapper = commandMapper.containsKey(text);
 						String answer = "I can't answer at this question(";
 
 						if (typeCommand.equalsIgnoreCase("bot_command")
@@ -213,7 +214,7 @@ public class MessagesChecker implements Runnable {
 								}
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = sb.toString();
@@ -236,7 +237,7 @@ public class MessagesChecker implements Runnable {
 										"remove all events"));
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = new StringBuilder()
@@ -264,7 +265,7 @@ public class MessagesChecker implements Runnable {
 								buttonNames.add("Home");
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								adaMode.remove(id);
@@ -292,7 +293,7 @@ public class MessagesChecker implements Runnable {
 								buttonNames.add("Save");
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								adaMode.put(id, true);
@@ -320,7 +321,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(buttonNames);
 									buttonNames.add("Back to Ada menu");
 									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 									answer = "Ok. Before using this command recommend check events via 'See events' command.\nChoose event date for deleting";
 								} else {
@@ -334,14 +335,16 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 
 								if (DataBaseHelper.getInstance().existRentUser(
-										id, this.objectMapper)) {
+										id, objectMapper)) {
 
 									if (DataBaseHelper.getInstance()
 											.existPayment(id)) {
-										buttons.add(getButtonsList("add month",
-												"details", "payments"));
+										buttons.add(getButtonsList("add month"));
+										buttons.add(getButtonsList("details",
+												"payments"));
 										buttons.add(getButtonsList("rates",
 												"change rates"));
+										buttons.add(getButtonsList("new primary"));
 										buttons.add(getButtonsList(
 												"remove payment", "remove rent"));
 										answer = new StringBuilder()
@@ -358,27 +361,27 @@ public class MessagesChecker implements Runnable {
 										buttons.add(getButtonsList("add month"));
 										buttons.add(getButtonsList("rates",
 												"change rates"));
-										buttons.add(getButtonsList("New primary counters"));
+										buttons.add(getButtonsList("new primary"));
 										answer = new StringBuilder()
 												.append("You can control your rent by sending these commands:\n")
 												.append("add month (/rent_add) - add month of rent\n")
 												.append("rates (/getrates) - return all rates for rent\n")
 												.append("change rates (/changerates) - change rates for rent\n")
-												.append("new primary counters (/setprimarycounters)- set starting indications")
+												.append("new primary (/setprimarycounters)- set starting indications")
 												.toString();
 									}
 
 								} else {
-									buttons.add(getButtonsList("new primary counters"));
+									buttons.add(getButtonsList("new primary"));
 
 									answer = new StringBuilder()
 											.append("Hi new user! For access to all functions for control your rent you must set primary counters. Please use this command:\n")
-											.append("new primary counters (/setprimarycounters)- set starting indications")
+											.append("new primary (/setprimarycounters)- set starting indications")
 											.toString();
 								}
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								if (rentData.containsKey(id)) {
@@ -387,9 +390,8 @@ public class MessagesChecker implements Runnable {
 							}
 								break;
 							case "/rent_add": {
-								RentHolder rent = new RentHolder(id, owner,
-										this.objectMapper);
-								rent.initIndications(this.objectMapper);
+								RentHolder rent = new RentHolder(id, owner);
+								rent.initIndications();
 								rentData.put(id, Optional.of(rent));
 
 								defaultAddMonthButtons(rent, rh);
@@ -407,7 +409,7 @@ public class MessagesChecker implements Runnable {
 								break;
 							case "/getrates": {
 								answer = DataBaseHelper.getInstance().getRates(
-										id, this.objectMapper);
+										id, objectMapper);
 								if (answer.length() == 0) {
 									answer = "Rates are empty!";
 								}
@@ -442,7 +444,7 @@ public class MessagesChecker implements Runnable {
 								}
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = new StringBuilder()
@@ -485,11 +487,9 @@ public class MessagesChecker implements Runnable {
 												});
 
 								if (buttons.size() > 0) {
-									List<String> buttonNames = new ArrayList<>();
-									buttons.add(buttonNames);
-									buttonNames.add("back to rent menu");
+									buttons.add(getButtonsList("back to rent menu"));
 									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 									answer = "Ok. Follow months can be deleted";
 								} else {
@@ -507,22 +507,27 @@ public class MessagesChecker implements Runnable {
 								}
 							}
 								break;
-							case "/purge":
+							case "/purge": {
+								List<List<String>> buttons = new ArrayList<>();
 								if (DataBaseHelper.getInstance().purgeAll(id)) {
+									buttons.add(getButtonsList("back to rent menu"));
+									rh.setNeedReplyMarkup(true);
+									rh.setReplyMarkup(objectMapper
+											.writeValueAsString(getButtons(buttons)));
 									answer = "All information about rent removed";
 								} else {
 									answer = "Oops error! Can't delete information!";
 								}
+							}
 								break;
-							// case "/getstat": {
-							// Optional<RentHolder> rentHolder = rentData
-							// .get(id);
-							// answer = (null != rentHolder) ? rentHolder
-							// .get().getStatAddedMonth()
-							// :
-							// "Rent mode is not active. For activate rent mode use 'Add month' command";
-							// }
-							// break;
+							case "/getstat": {
+								Optional<RentHolder> rentHolder = rentData
+										.get(id);
+								answer = (null != rentHolder) ? rentHolder
+										.get().getStatAddedMonth()
+										: "Rent mode is not active. For activate rent mode use 'Add month' command";
+							}
+								break;
 							case "/getstatbymonth": {
 								List<List<String>> buttons = new ArrayList<>();
 
@@ -540,9 +545,9 @@ public class MessagesChecker implements Runnable {
 								if (buttons.size() > 0) {
 									List<String> buttonNames = new ArrayList<>();
 									buttons.add(buttonNames);
-									buttonNames.add("Back to rent menu");
+									buttonNames.add("back to rent menu");
 									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 									answer = "Ok. Follow months can be detailed";
 								} else {
@@ -559,14 +564,16 @@ public class MessagesChecker implements Runnable {
 								buttonNames.add("no");
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = "Ok. Do you need include outfall to final amount?";
 							}
 								break;
-							case "/settakeout":
+							case "/settakeout": {
+								hideKeybord(rh);
 								answer = "For set takeout information please use this format:\n\namount description\n\ndescription restriction - use underscore instead of space";
+							}
 								break;
 							case "/setmonth": {
 								List<List<String>> buttons = new ArrayList<>();
@@ -575,7 +582,7 @@ public class MessagesChecker implements Runnable {
 										Locale.US) + "_" + date.getYear()));
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 								answer = "For set rent for current month - tap on button below.\n\nFor set rent for another month please use this format:\n\nshortmonthname_year\nExample:may_2016";
 							}
@@ -596,7 +603,7 @@ public class MessagesChecker implements Runnable {
 											});
 
 									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 
 									answer = "You have "
@@ -649,7 +656,7 @@ public class MessagesChecker implements Runnable {
 
 								rh.setNeedReplyMarkup(true);
 								try {
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 								} catch (JsonProcessingException e) {
 									logger.error(e.getMessage(), e);
@@ -676,7 +683,7 @@ public class MessagesChecker implements Runnable {
 								buttons.add(getButtonsList("back to rent menu"));
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 								answer = "Choose type of water for setting primary indications?";
 							}
@@ -693,7 +700,7 @@ public class MessagesChecker implements Runnable {
 								buttons.add(getButtonsList("back to rent menu"));
 
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 								answer = "Which type of tariff is right for you?";
 							}
@@ -866,8 +873,8 @@ public class MessagesChecker implements Runnable {
 				Boolean outfall = (text.equalsIgnoreCase("yes")) ? true : false;
 				Optional<RentHolder> rentHolder = rentData.get(idChat);
 				Optional<String> answerTemp = (rentHolder != null) ? Optional
-						.of(String.valueOf(rentHolder.get().getTotal(outfall)))
-						: Optional.ofNullable(null);
+						.of(String.valueOf(rentHolder.get().getTotalAmount(
+								outfall))) : Optional.ofNullable(null);
 
 				if (answerTemp.isPresent()) {
 					answer = answerTemp.get() + " rub";
@@ -951,7 +958,7 @@ public class MessagesChecker implements Runnable {
 				rentHolder.getCurrentLightIndications().put(text, 0.0);
 				rentHolder.setLightTypeActive(text);
 
-				answer = "Set light intication for " + text;
+				answer = "Set light indication for " + text;
 
 			} else {
 				String lightActiveType = rentHolder.getLightTypeActive();
@@ -960,6 +967,8 @@ public class MessagesChecker implements Runnable {
 					try {
 						rentHolder.getCurrentLightIndications().put(
 								lightActiveType, Double.parseDouble(text));
+						answer = "Indication for " + lightActiveType
+								+ " set successfully!";
 					} catch (NumberFormatException e) {
 						logger.error(e.getMessage(), e);
 						return "Wrong format indication must be a number! Try again";
@@ -1009,35 +1018,6 @@ public class MessagesChecker implements Runnable {
 					isRemoveCommand = true;
 					answer = "Water set successfully";
 					defaultAddMonthButtons(rentHolder, rh);
-
-					System.out.println("Current cold");
-					rentHolder.getCurrentColdWaterIndications().entrySet()
-							.stream().forEach(e -> {
-								System.out.println(e.getKey());
-								System.out.println(e.getValue().getAlias());
-							});
-
-					System.out.println("last cold");
-					rentHolder.getWaterPrimary().getColdWater().entrySet()
-							.stream().forEach(e -> {
-								System.out.println(e.getKey());
-								System.out.println(e.getValue().getAlias());
-							});
-
-					System.out.println("Current hot");
-					rentHolder.getCurrentHotWaterIndications().entrySet()
-							.stream().forEach(e -> {
-								System.out.println(e.getKey());
-								System.out.println(e.getValue().getAlias());
-							});
-
-					System.out.println("last hot");
-					rentHolder.getWaterPrimary().getHotWater().entrySet()
-							.stream().forEach(e -> {
-								System.out.println(e.getKey());
-								System.out.println(e.getValue().getAlias());
-							});
-
 				}
 
 			} else {
@@ -1052,12 +1032,22 @@ public class MessagesChecker implements Runnable {
 						// with alias
 						if (hotWater.isEmpty()) {
 							hotWater.put(1, new WaterHolder(temp[1]));
-
+							rentHolder.getAddedWater().put(text, 1);
 						} else {
-							hotWater.put(
-									((NavigableMap<Integer, WaterHolder>) hotWater)
-											.lastKey() + 1, new WaterHolder(
-											temp[1]));
+							if (rentHolder.getAddedWater().containsKey(text)) {
+								Integer indexExist = rentHolder.getAddedWater()
+										.get(text);
+
+								hotWater.put(indexExist, new WaterHolder(
+										temp[1]));
+
+							} else {
+								Integer next = ((NavigableMap<Integer, WaterHolder>) hotWater)
+										.lastKey() + 1;
+
+								hotWater.put(next, new WaterHolder(temp[1]));
+								rentHolder.getAddedWater().put(text, next);
+							}
 						}
 					} else {
 						hotWater.put(1, new WaterHolder());
@@ -1074,12 +1064,22 @@ public class MessagesChecker implements Runnable {
 						// with alias
 						if (coldWater.isEmpty()) {
 							coldWater.put(1, new WaterHolder(temp[1]));
+							rentHolder.getAddedWater().put(text, 1);
 
 						} else {
-							coldWater
-									.put(((NavigableMap<Integer, WaterHolder>) coldWater)
-											.lastKey() + 1, new WaterHolder(
-											temp[1]));
+							if (rentHolder.getAddedWater().containsKey(text)) {
+								Integer indexExist = rentHolder.getAddedWater()
+										.get(text);
+
+								coldWater.put(indexExist, new WaterHolder(
+										temp[1]));
+
+							} else {
+								Integer next = ((NavigableMap<Integer, WaterHolder>) coldWater)
+										.lastKey() + 1;
+								coldWater.put(next, new WaterHolder(temp[1]));
+								rentHolder.getAddedWater().put(text, next);
+							}
 						}
 
 					} else {
@@ -1111,7 +1111,7 @@ public class MessagesChecker implements Runnable {
 
 				rh.setNeedReplyMarkup(true);
 				try {
-					rh.setReplyMarkup(this.objectMapper
+					rh.setReplyMarkup(objectMapper
 							.writeValueAsString(getButtons(buttons)));
 				} catch (JsonProcessingException e) {
 					logger.error(e.getMessage(), e);
@@ -1189,7 +1189,7 @@ public class MessagesChecker implements Runnable {
 
 					rh.setNeedReplyMarkup(true);
 					try {
-						rh.setReplyMarkup(this.objectMapper
+						rh.setReplyMarkup(objectMapper
 								.writeValueAsString(getButtons(buttons)));
 					} catch (JsonProcessingException e) {
 						logger.error(e.getMessage(), e);
@@ -1286,7 +1286,7 @@ public class MessagesChecker implements Runnable {
 
 								rh.setNeedReplyMarkup(true);
 								try {
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 								} catch (JsonProcessingException e) {
 									logger.error(e.getMessage(), e);
@@ -1359,7 +1359,7 @@ public class MessagesChecker implements Runnable {
 
 								rh.setNeedReplyMarkup(true);
 								try {
-									rh.setReplyMarkup(this.objectMapper
+									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
 								} catch (JsonProcessingException e) {
 									logger.error(e.getMessage(), e);
@@ -1387,7 +1387,7 @@ public class MessagesChecker implements Runnable {
 
 						rh.setNeedReplyMarkup(true);
 						try {
-							rh.setReplyMarkup(this.objectMapper
+							rh.setReplyMarkup(objectMapper
 									.writeValueAsString(getButtons(buttons)));
 						} catch (JsonProcessingException e) {
 
@@ -1446,7 +1446,7 @@ public class MessagesChecker implements Runnable {
 								DataBaseHelper
 										.getInstance()
 										.insertPrimaryCounters(
-												this.objectMapper
+												objectMapper
 														.writeValueAsString(pwh),
 												"water", idChat, owner);
 							} catch (JsonProcessingException e) {
@@ -1475,7 +1475,7 @@ public class MessagesChecker implements Runnable {
 							buttons.add(getButtonsList("back to rent menu"));
 
 							rh.setNeedReplyMarkup(true);
-							rh.setReplyMarkup(this.objectMapper
+							rh.setReplyMarkup(objectMapper
 									.writeValueAsString(getButtons(buttons)));
 
 							answer = new StringBuilder("Ok. You have ")
@@ -1545,7 +1545,7 @@ public class MessagesChecker implements Runnable {
 
 					try {
 						rh.setNeedReplyMarkup(true);
-						rh.setReplyMarkup(this.objectMapper
+						rh.setReplyMarkup(objectMapper
 								.writeValueAsString(getButtons(buttons)));
 					} catch (JsonProcessingException e) {
 						logger.error(e.getMessage(), e);
@@ -1555,9 +1555,9 @@ public class MessagesChecker implements Runnable {
 					break;
 				case "3": {
 					List<List<String>> buttons = new ArrayList<>();
-					buttons.add(getButtonsList(PrimaryLightHolder.Perionds.PEAK
+					buttons.add(getButtonsList(PrimaryLightHolder.Perionds.HALF_PEAK
 							.name().toLowerCase(),
-							PrimaryLightHolder.Perionds.HALF_PEAK.name()
+							PrimaryLightHolder.Perionds.PEAK.name()
 									.toLowerCase(),
 							PrimaryLightHolder.Perionds.NIGHT.name()
 									.toLowerCase()));
@@ -1565,7 +1565,7 @@ public class MessagesChecker implements Runnable {
 
 					try {
 						rh.setNeedReplyMarkup(true);
-						rh.setReplyMarkup(this.objectMapper
+						rh.setReplyMarkup(objectMapper
 								.writeValueAsString(getButtons(buttons)));
 					} catch (JsonProcessingException e) {
 						logger.error(e.getMessage(), e);
@@ -1649,7 +1649,7 @@ public class MessagesChecker implements Runnable {
 
 							try {
 								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(this.objectMapper
+								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 							} catch (JsonProcessingException e) {
 								logger.error(e.getMessage(), e);
@@ -1675,7 +1675,7 @@ public class MessagesChecker implements Runnable {
 								DataBaseHelper
 										.getInstance()
 										.insertPrimaryCounters(
-												this.objectMapper
+												objectMapper
 														.writeValueAsString(lightObj),
 												"light", idChat, owner);
 							} catch (JsonProcessingException e) {
@@ -1711,7 +1711,7 @@ public class MessagesChecker implements Runnable {
 								DataBaseHelper
 										.getInstance()
 										.insertPrimaryCounters(
-												this.objectMapper
+												objectMapper
 														.writeValueAsString(lightObj),
 												"light", idChat, owner);
 							} catch (JsonProcessingException e) {
@@ -1773,7 +1773,7 @@ public class MessagesChecker implements Runnable {
 
 		try {
 			rh.setNeedReplyMarkup(true);
-			rh.setReplyMarkup(this.objectMapper
+			rh.setReplyMarkup(objectMapper
 					.writeValueAsString(getButtons(buttons)));
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
@@ -1810,7 +1810,7 @@ public class MessagesChecker implements Runnable {
 
 		try {
 			rh.setNeedReplyMarkup(true);
-			rh.setReplyMarkup(this.objectMapper
+			rh.setReplyMarkup(objectMapper
 					.writeValueAsString(getButtons(buttons)));
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
@@ -1834,7 +1834,7 @@ public class MessagesChecker implements Runnable {
 
 		rh.setNeedReplyMarkup(true);
 		try {
-			rh.setReplyMarkup(this.objectMapper
+			rh.setReplyMarkup(objectMapper
 					.writeValueAsString(getButtons(buttons)));
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
@@ -1844,7 +1844,7 @@ public class MessagesChecker implements Runnable {
 	private void hideKeybord(ResponseHolder rh) {
 		rh.setNeedReplyMarkup(true);
 		try {
-			rh.setReplyMarkup(this.objectMapper
+			rh.setReplyMarkup(objectMapper
 					.writeValueAsString(new ReplyKeyboardHide()));
 		} catch (JsonProcessingException e) {
 
@@ -1868,8 +1868,7 @@ public class MessagesChecker implements Runnable {
 					}
 				});
 			}
-			rh.setReplyMarkup(this.objectMapper
-					.writeValueAsString(getButtons(list)));
+			rh.setReplyMarkup(objectMapper.writeValueAsString(getButtons(list)));
 		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage(), e);
 		}

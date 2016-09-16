@@ -1,21 +1,25 @@
 package rent;
 
+import static ru.max.bot.BotHelper.objectMapper;
+
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
+import db.MonthSaver;
 
 public class RentHolder {
 
@@ -34,43 +38,59 @@ public class RentHolder {
 	private String waterTypeActive;
 	private List<List<String>> waterButtons;
 	private String buttonWaterCounterActive;
+	private Double rentAmount;
 
-	public RentHolder(String chatId, String owner, ObjectMapper mapper) {
+	// need if user decides change indicators
+	private Map<String, Integer> addedWater;
+
+	public RentHolder(String chatId, String owner) {
 		this.chatId = chatId;
 		this.owner = owner;
 	}
 
-	public void initIndications(ObjectMapper mapper) throws JsonParseException,
+	public void initIndications() throws JsonParseException,
 			JsonMappingException, IOException {
 
-		this.lightPrimary = mapper.readValue(
+		this.lightPrimary = objectMapper.readValue(
 				(String) DataBaseHelper.getInstance().getFirstValue(
 						"rent_const", "light",
 						Filters.eq("id_chat", this.chatId)),
 				PrimaryLightHolder.class);
-		this.waterPrimary = mapper.readValue(
+		this.waterPrimary = objectMapper.readValue(
 				(String) DataBaseHelper.getInstance().getFirstValue(
 						"rent_const", "water",
 						Filters.eq("id_chat", this.chatId)),
 				PrimaryWaterHolder.class);
-		this.lastIndications = mapper.readValue(
+		this.lastIndications = objectMapper.readValue(
 				(String) DataBaseHelper.getInstance().getFirstValue(
 						"rent_const", "last_indications",
 						Filters.eq("id_chat", this.chatId)),
 				LastIndicationsHolder.class);
+		this.rentAmount = DataBaseHelper.getInstance()
+				.getFirstValue("rent_const", "rent_amount",
+						Filters.eq("id_chat", this.chatId));
 		this.currentLightIndications = new TreeMap<>();
 		this.currentColdWaterIndications = new TreeMap<>();
 		this.currentHotWaterIndications = new TreeMap<>();
+		this.addedWater = new LinkedHashMap<>();
 
 	}
 
-	public Double getTotal(Boolean needOutfall) {
+	/**
+	 * Calculate total amount for rent month and save to database
+	 * 
+	 * @param needOutfall
+	 *            - flag for include ootfall to total amount or not
+	 * @return - total amount for month
+	 */
+	public Double getTotalAmount(Boolean needOutfall) {
 
-		Double total = null;
-		
-		
+		RentMonthHolder totalObj = new RentMonthHolder(this.chatId, this.owner);
 
-		//if (isLightSet() && isWaterSet() && this.monthOfRent != null) {
+		if (isLightSet() && isWaterSet() && this.monthOfRent != null) {
+
+			LastIndicationsHolder lastInds = new LastIndicationsHolder();
+			lastInds.setColdWater(this.currentColdWaterIndications);
 
 			this.currentColdWaterIndications
 					.entrySet()
@@ -78,23 +98,25 @@ public class RentHolder {
 					.forEach(
 							e -> {
 								Integer key = e.getKey();
+								String alias = e.getValue().getAlias();
+								Double rate = this.waterPrimary
+										.getColdWaterRate();
+
+								if (null == alias) {
+									alias = "cold";
+								}
 
 								Double used = e.getValue()
 										.getPrimaryIndication()
 										- this.lastIndications.getColdWater()
 												.get(key)
 												.getPrimaryIndication();
-								System.out.println("Used for "
-										+ e.getValue().getAlias() + " "
-										+ (used));
-
-								System.out.println("Price for "
-										+ e.getValue().getAlias()
-										+ " "
-										+ (used * this.waterPrimary
-												.getColdWaterRate()));
-
+								Double price = used * rate;
+								totalObj.getColdWater().put(alias,
+										new Counter(rate, used, price));
 							});
+
+			lastInds.setHotWater(this.currentHotWaterIndications);
 
 			this.currentHotWaterIndications
 					.entrySet()
@@ -102,87 +124,126 @@ public class RentHolder {
 					.forEach(
 							e -> {
 								Integer key = e.getKey();
+								String alias = e.getValue().getAlias();
+								Double rate = this.waterPrimary
+										.getHotWaterRate();
+
+								if (null == alias) {
+									alias = "hot";
+								}
 
 								Double used = e.getValue()
 										.getPrimaryIndication()
 										- this.lastIndications.getHotWater()
 												.get(key)
 												.getPrimaryIndication();
-								System.out.println("Used for "
-										+ e.getValue().getAlias() + " " + used);
+								Double price = used * rate;
+								totalObj.getHotWater().put(alias,
+										new Counter(rate, used, price));
 
-								System.out.println("Price for "
-										+ e.getValue().getAlias()
-										+ " "
-										+ (used * this.waterPrimary
-												.getHotWaterRate()));
+								if (needOutfall) {
+									Double outfallCount = used
+											+ totalObj.getColdWater()
+													.get(alias).getUsed();
+									Double outfallRate = this.waterPrimary
+											.getOutfallRate();
 
+									totalObj.getOutfall().put(
+											alias,
+											new Counter(outfallRate,
+													outfallCount, outfallCount
+															* outfallRate));
+								}
 							});
 
-//			this.usedT1 = this.countT1 - this.lastT1Count;
-//			this.priceT1 = this.usedT1 * this.T1Rate;
-//			this.usedT2 = this.countT2 - this.lastT2Count;
-//			this.priceT2 = this.usedT2 * this.T2Rate;
-//			this.usedT3 = this.countT3 - this.lastT3Count;
-//			this.priceT3 = this.usedT3 * this.T3Rate;
-//
-//			
-//
-//			
-//			this.countOutFall = this.usedColdWater + this.usedHotWater;
-//			this.priceOutFall = (null != needOutfall && needOutfall) ? (this.outFallRate * this.countOutFall)
-//					: 0.0;
-//			this.total = this.priceColdWater + this.priceHotWater
-//					+ this.priceOutFall + this.priceT1 + this.priceT2
-//					+ this.priceT3 + this.rentAmount - this.takeout;
+			lastInds.setLight(this.currentLightIndications);
+
+			this.currentLightIndications
+					.entrySet()
+					.stream()
+					.forEach(
+							e -> {
+								String key = e.getKey();
+								Double rate = this.lightPrimary.getRates().get(
+										key);
+								Double used = e.getValue()
+										- this.lightPrimary.getIndications()
+												.get(key);
+								Double price = used * rate;
+								totalObj.getLight().put(key,
+										new Counter(rate, used, price));
+							});
+
+			if (this.takeout != null) {
+				totalObj.setTakeout(this.takeout);
+				totalObj.setTakeoutDesc(this.takeoutDescription);
+			}
+
+			totalObj.setMonth(this.monthOfRent);
+			totalObj.setRentAmount(this.rentAmount);
+			totalObj.setLastIndications(lastInds);
 
 			// save month statistic to database
-			// ExecutorService exs = Executors.newSingleThreadExecutor();
-			// exs.execute(new MonthSaver(this));
-			// exs.shutdown();
-		//}
-		return total;
+			ExecutorService exs = Executors.newSingleThreadExecutor();
+			exs.execute(new MonthSaver(totalObj));
+			exs.shutdown();
+
+		}
+
+		return totalObj.getTotalAmount();
 	}
 
-	// public String getStatAddedMonth() {
-	//
-	// StringBuilder sb = new StringBuilder();
-	//
-	// sb.append("Added by: ").append(this.owner).append("\nMonth: ")
-	// .append(this.monthRent).append("\nLight\n")
-	// .append("T1 indication: ").append(this.countT1)
-	// .append("; used: ").append(this.usedT1).append("; price: ")
-	// .append(String.format("%.2f", this.priceT1)).append(" rub")
-	// .append("\nT2 indication: ").append(this.countT2)
-	// .append("; used: ").append(this.usedT2).append("; price: ")
-	// .append(String.format("%.2f", this.priceT2)).append(" rub")
-	// .append("\nT3 indication: ").append(this.countT3)
-	// .append("; used: ").append(this.usedT3).append("; price: ")
-	// .append(String.format("%.2f", this.priceT3)).append(" rub")
-	// .append("\n\nWater\n").append("Hot water indication: ")
-	// .append(this.countHotWater).append("; used: ")
-	// .append(this.usedHotWater).append("; price: ")
-	// .append(String.format("%.2f", this.priceHotWater))
-	// .append(" rub").append("\nCold water indication: ")
-	// .append(this.countColdWater).append("; used: ")
-	// .append(this.usedColdWater).append("; price: ")
-	// .append(String.format("%.2f", this.priceColdWater))
-	// .append(" rub").append("\nOutfall water indication: ")
-	// .append(this.countOutFall).append("; price: ")
-	// .append(String.format("%.2f", this.priceOutFall))
-	// .append(" rub").append("\n\nRent Amount: ")
-	// .append(this.rentAmount).append(" rub").append("\nTotal: ")
-	// .append(String.format("%.2f", this.total)).append(" rub");
-	//
-	// if (this.takeout > 0) {
-	// sb.append("\nTakeout: ")
-	// .append(String.format("%.2f", this.takeout)).append(" rub")
-	// .append("\nTakeout desc: ").append(this.takeoutDesc);
-	// }
-	// return sb.toString();
-	// }
+	public String getStatAddedMonth() {
 
-	
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("Added by: ").append(this.owner).append("\nMonth: ")
+				.append(this.monthOfRent).append("\nLight\n");
+
+		this.currentLightIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(e.getKey()).append(": ")
+									.append(e.getValue()).append("\n");
+						});
+
+		sb.append("\nWater\nCold water:\n");
+
+		this.currentColdWaterIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(e.getValue().getAlias())
+									.append(": ")
+									.append(e.getValue().getPrimaryIndication())
+									.append("\n");
+						});
+
+		sb.append("\nHot water:\n");
+		this.currentHotWaterIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(e.getValue().getAlias())
+									.append(": ")
+									.append(e.getValue().getPrimaryIndication())
+									.append("\n");
+						});
+
+		sb.append("\nRent Amount: ").append(this.rentAmount).append(" rub");
+
+		if (this.takeout != null) {
+			sb.append("\nTakeout: ")
+					.append(String.format("%.2f", this.takeout)).append(" rub")
+					.append("\nTakeout desc: ").append(this.takeoutDescription);
+		}
+		return sb.toString();
+	}
+
 	public Double getTakeout() {
 		return this.takeout;
 	}
@@ -275,6 +336,10 @@ public class RentHolder {
 
 	public void setButtonWaterCounterActive(String buttonWaterCounterActive) {
 		this.buttonWaterCounterActive = buttonWaterCounterActive;
+	}
+
+	public Map<String, Integer> getAddedWater() {
+		return this.addedWater;
 	}
 
 	@Override
