@@ -70,7 +70,7 @@ public class PrimaryLightHolder {
 		}
 	}
 
-	public static enum Perionds {
+	public static enum Periods {
 
 		DAY, NIGHT, PEAK, HALF_PEAK
 	}

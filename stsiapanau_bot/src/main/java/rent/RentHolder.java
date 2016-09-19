@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -102,18 +103,16 @@ public class RentHolder {
 								Double rate = this.waterPrimary
 										.getColdWaterRate();
 
-								if (null == alias) {
-									alias = "cold";
-								}
-
 								Double used = e.getValue()
 										.getPrimaryIndication()
 										- this.lastIndications.getColdWater()
 												.get(key)
 												.getPrimaryIndication();
 								Double price = used * rate;
-								totalObj.getColdWater().put(alias,
-										new Counter(rate, used, price));
+
+								Counter counter = new Counter(rate, used, price);
+								counter.setAlias(alias);
+								totalObj.getColdWater().put(key, counter);
 							});
 
 			lastInds.setHotWater(this.currentHotWaterIndications);
@@ -128,33 +127,36 @@ public class RentHolder {
 								Double rate = this.waterPrimary
 										.getHotWaterRate();
 
-								if (null == alias) {
-									alias = "hot";
-								}
-
 								Double used = e.getValue()
 										.getPrimaryIndication()
 										- this.lastIndications.getHotWater()
 												.get(key)
 												.getPrimaryIndication();
 								Double price = used * rate;
-								totalObj.getHotWater().put(alias,
-										new Counter(rate, used, price));
 
-								if (needOutfall) {
-									Double outfallCount = used
-											+ totalObj.getColdWater()
-													.get(alias).getUsed();
-									Double outfallRate = this.waterPrimary
-											.getOutfallRate();
-
-									totalObj.getOutfall().put(
-											alias,
-											new Counter(outfallRate,
-													outfallCount, outfallCount
-															* outfallRate));
-								}
+								Counter counter = new Counter(rate, used, price);
+								counter.setAlias(alias);
+								totalObj.getHotWater().put(key, counter);
 							});
+
+			if (needOutfall) {
+				Double outfallCount = 0.0;
+
+				for (Entry<Integer, Counter> entry : totalObj.getColdWater()
+						.entrySet()) {
+					outfallCount += entry.getValue().getUsed();
+				}
+
+				for (Entry<Integer, Counter> entry : totalObj.getHotWater()
+						.entrySet()) {
+					outfallCount += entry.getValue().getUsed();
+				}
+
+				Double outfallRate = this.waterPrimary.getOutfallRate();
+
+				totalObj.setOutfall(new Counter(outfallRate, outfallCount,
+						outfallCount * outfallRate));
+			}
 
 			lastInds.setLight(this.currentLightIndications);
 
@@ -167,8 +169,8 @@ public class RentHolder {
 								Double rate = this.lightPrimary.getRates().get(
 										key);
 								Double used = e.getValue()
-										- this.lightPrimary.getIndications()
-												.get(key);
+										- this.lastIndications.getLight().get(
+												key);
 								Double price = used * rate;
 								totalObj.getLight().put(key,
 										new Counter(rate, used, price));
@@ -216,7 +218,9 @@ public class RentHolder {
 				.stream()
 				.forEach(
 						e -> {
-							sb.append(e.getValue().getAlias())
+							sb.append(
+									(e.getValue().getAlias() == null) ? "cold"
+											: e.getValue().getAlias())
 									.append(": ")
 									.append(e.getValue().getPrimaryIndication())
 									.append("\n");
@@ -228,7 +232,9 @@ public class RentHolder {
 				.stream()
 				.forEach(
 						e -> {
-							sb.append(e.getValue().getAlias())
+							sb.append(
+									(e.getValue().getAlias() == null) ? "hot"
+											: e.getValue().getAlias())
 									.append(": ")
 									.append(e.getValue().getPrimaryIndication())
 									.append("\n");

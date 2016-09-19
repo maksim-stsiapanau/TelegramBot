@@ -6,9 +6,9 @@ import java.util.Map;
 public class RentMonthHolder {
 
 	private Map<String, Counter> light;
-	private Map<String, Counter> coldWater;
-	private Map<String, Counter> hotWater;
-	private Map<String, Counter> outfall;
+	private Map<Integer, Counter> coldWater;
+	private Map<Integer, Counter> hotWater;
+	private Counter outfall;
 	private Double takeout;
 	private String takeoutDesc;
 	private String month;
@@ -33,25 +33,26 @@ public class RentMonthHolder {
 		return this.light;
 	}
 
-	public Map<String, Counter> getColdWater() {
+	public Map<Integer, Counter> getColdWater() {
 		if (null == this.coldWater) {
 			this.coldWater = new LinkedHashMap<>();
 		}
 		return this.coldWater;
 	}
 
-	public Map<String, Counter> getHotWater() {
+	public Map<Integer, Counter> getHotWater() {
 		if (null == this.hotWater) {
 			this.hotWater = new LinkedHashMap<>();
 		}
 		return this.hotWater;
 	}
 
-	public Map<String, Counter> getOutfall() {
-		if (null == this.outfall) {
-			this.outfall = new LinkedHashMap<>();
-		}
+	public Counter getOutfall() {
 		return this.outfall;
+	}
+
+	public void setOutfall(Counter outfall) {
+		this.outfall = outfall;
 	}
 
 	public Double getTakeout() {
@@ -93,9 +94,9 @@ public class RentMonthHolder {
 			this.totalAmount += e.getValue().getPrice();
 		});
 
-		this.outfall.entrySet().stream().forEach(e -> {
-			this.totalAmount += e.getValue().getPrice();
-		});
+		if (null != this.outfall) {
+			this.totalAmount += this.outfall.getPrice();
+		}
 
 		this.totalAmount += this.rentAmount;
 
@@ -129,43 +130,5 @@ public class RentMonthHolder {
 	public String getOwner() {
 		return this.owner;
 	}
-
-	// public String getStatAddedMonth() {
-	//
-	// StringBuilder sb = new StringBuilder();
-	//
-	// sb.append("Added by: ").append(this.owner).append("\nMonth: ")
-	// .append(this.monthRent).append("\nLight\n")
-	// .append("T1 indication: ").append(this.countT1)
-	// .append("; used: ").append(this.usedT1).append("; price: ")
-	// .append(String.format("%.2f", this.priceT1)).append(" rub")
-	// .append("\nT2 indication: ").append(this.countT2)
-	// .append("; used: ").append(this.usedT2).append("; price: ")
-	// .append(String.format("%.2f", this.priceT2)).append(" rub")
-	// .append("\nT3 indication: ").append(this.countT3)
-	// .append("; used: ").append(this.usedT3).append("; price: ")
-	// .append(String.format("%.2f", this.priceT3)).append(" rub")
-	// .append("\n\nWater\n").append("Hot water indication: ")
-	// .append(this.countHotWater).append("; used: ")
-	// .append(this.usedHotWater).append("; price: ")
-	// .append(String.format("%.2f", this.priceHotWater))
-	// .append(" rub").append("\nCold water indication: ")
-	// .append(this.countColdWater).append("; used: ")
-	// .append(this.usedColdWater).append("; price: ")
-	// .append(String.format("%.2f", this.priceColdWater))
-	// .append(" rub").append("\nOutfall water indication: ")
-	// .append(this.countOutFall).append("; price: ")
-	// .append(String.format("%.2f", this.priceOutFall))
-	// .append(" rub").append("\n\nRent Amount: ")
-	// .append(this.rentAmount).append(" rub").append("\nTotal: ")
-	// .append(String.format("%.2f", this.total)).append(" rub");
-	//
-	// if (this.takeout > 0) {
-	// sb.append("\nTakeout: ")
-	// .append(String.format("%.2f", this.takeout)).append(" rub")
-	// .append("\nTakeout desc: ").append(this.takeoutDesc);
-	// }
-	// return sb.toString();
-	// }
 
 }

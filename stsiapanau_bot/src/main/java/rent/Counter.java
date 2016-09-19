@@ -8,6 +8,7 @@ public class Counter {
 	private Double rate;
 	private Double used;
 	private Double price;
+	private String alias;
 
 	public Counter(Double rate, Double used, Double price) {
 		this.rate = rate;
@@ -28,6 +29,14 @@ public class Counter {
 
 	public Double getPrice() {
 		return this.price;
+	}
+
+	public String getAlias() {
+		return this.alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
 	}
 
 	@Override

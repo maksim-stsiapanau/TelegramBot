@@ -205,78 +205,94 @@ public class DataBaseHelper {
 												.append(" rub").append("\n");
 									});
 
-					sb.append("\nWater\n");
+					int sizeColdWater = rentHolder.getColdWater().size();
+					int sizeHotWater = rentHolder.getHotWater().size();
 
-					rentHolder
-							.getColdWater()
-							.entrySet()
-							.stream()
-							.forEach(
-									e -> {
-										String key = e.getKey();
-										Counter outfallMap = rentHolder
-												.getOutfall().get(key);
+					if (sizeColdWater > 0 && sizeHotWater > 0) {
+						sb.append("\nCold water");
+						rentHolder
+								.getColdWater()
+								.entrySet()
+								.stream()
+								.forEach(
+										e -> {
 
-										Double coldPrice = e.getValue()
-												.getPrice();
-										Double hotPrice = rentHolder
-												.getHotWater().get(key)
-												.getPrice();
+											sb.append("\n");
+											Optional<String> alias = Optional
+													.ofNullable(e.getValue()
+															.getAlias());
 
-										Double total = coldPrice + hotPrice;
-
-										sb.append(key)
-												.append(":\nCold - Used: ")
-												.append(e.getValue().getUsed())
-												.append("; Price: ")
-												.append(String.format("%.2f",
-														coldPrice))
-												.append(" rub; Rate: ")
-												.append(String.format("%.2f", e
-														.getValue().getRate()))
-												.append(" rub")
-												.append("\n")
-												.append("Hot - Used: ")
-												.append(rentHolder
-														.getHotWater().get(key)
-														.getUsed())
-												.append("; Price: ")
-												.append(String.format("%.2f",
-														hotPrice))
-												.append(" rub; Rate: ")
-												.append(String.format("%.2f",
-														rentHolder
-																.getHotWater()
-																.get(key)
-																.getRate()))
-												.append(" rub");
-										if (null != outfallMap) {
-											Double outfallPrice = outfallMap
-													.getPrice();
-											total += outfallPrice;
-
-											sb.append("\nOutfall - Count: ")
-													.append(outfallMap
+											if (alias.isPresent()) {
+												sb.append(alias.get()).append(
+														" - ");
+											}
+											sb.append("Used: ")
+													.append(e.getValue()
 															.getUsed())
 													.append("; Price: ")
-													.append(String.format(
-															"%.2f", outfallMap
+													.append(String
+															.format("%.2f", e
+																	.getValue()
 																	.getPrice()))
 													.append(" rub; Rate: ")
 													.append(String.format(
-															"%.2f",
-															outfallPrice));
+															"%.2f", e
+																	.getValue()
+																	.getRate()))
+													.append(" rub");
+										});
 
-										}
+						sb.append("\n\nHot water");
+						rentHolder
+								.getHotWater()
+								.entrySet()
+								.stream()
+								.forEach(
+										e -> {
+											sb.append("\n");
+											Optional<String> alias = Optional
+													.ofNullable(e.getValue()
+															.getAlias());
 
-										sb.append(" rub\nTotal: ")
-												.append(String.format("%.2f",
-														total))
-												.append(" rub\n\n");
+											if (alias.isPresent()) {
+												sb.append(alias.get()).append(
+														" - ");
+											}
+											sb.append("Used: ")
+													.append(e.getValue()
+															.getUsed())
+													.append("; Price: ")
+													.append(String
+															.format("%.2f", e
+																	.getValue()
+																	.getPrice()))
+													.append(" rub; Rate: ")
+													.append(String.format(
+															"%.2f", e
+																	.getValue()
+																	.getRate()))
+													.append(" rub");
+										});
 
-									});
+						Optional<Counter> outfall = Optional
+								.ofNullable(rentHolder.getOutfall());
 
-					sb.append("Rent Amount: ")
+						if (outfall.isPresent()) {
+
+							sb.append("\n\nOutfall - Count: ")
+									.append(outfall.get().getUsed())
+									.append("; Price: ")
+									.append(String.format("%.2f", outfall.get()
+											.getPrice()))
+									.append(" rub; Rate: ")
+									.append(String.format("%.2f", outfall.get()
+											.getRate())).append(" rub");
+
+						}
+
+					}
+
+					sb.append("\n\nRent Amount: ")
 							.append(rentHolder.getRentAmount()).append(" rub");
 
 					if (null != rentHolder.getTakeout()) {
@@ -305,26 +321,27 @@ public class DataBaseHelper {
 	 * 
 	 * @return String message with history by months
 	 */
-	public String getHistory(String chatId) {
+	public String getPaymentsHistory(String chatId) {
 
-		StringBuilder sb = new StringBuilder().append("History:\n");
+		StringBuilder sb = new StringBuilder();
 
 		MongoCursor<Document> iter = null;
 
 		try {
 			FindIterable<Document> docs = this.db.getCollection("rent_stat")
-					.find(Filters.eq("id_chat", chatId));
+					.find(Filters.eq("id_chat", chatId))
+					.sort(Sorts.descending("add_date", "-1"));
 			iter = docs.iterator();
+			sb.append("History:\n");
 			while (iter.hasNext()) {
 				Document document = iter.next();
-				sb.append("\nMonth: ")
+				sb.append("\n")
 						.append(document.get("month"))
-						.append("; Total: ")
-
+						.append(": ")
 						.append(objectMapper.readValue(
 								(String) document.get("stat"),
 								RentMonthHolder.class).getTotalAmount())
-						.append(" rub.");
+						.append(" rub");
 			}
 		} catch (Exception e) {
 			logger.error("Can't get history! Error: %s", e.getMessage(), e);
@@ -362,7 +379,7 @@ public class DataBaseHelper {
 				Optional<Document> lastRecord = Optional.ofNullable(this.db
 						.getCollection("rent_stat")
 						.find(Filters.eq("id_chat", idChat)).limit(1)
-						.sort(Sorts.descending("$natural", "-1")).first());
+						.sort(Sorts.descending("add_date", "-1")).first());
 				if (lastRecord.isPresent()) {
 					String lastMonthAdded = lastRecord.get().getString("month");
 
@@ -385,13 +402,13 @@ public class DataBaseHelper {
 				if (isLastRecord) {
 					Document lastRecord = this.db.getCollection("rent_stat")
 							.find(Filters.eq("id_chat", idChat)).limit(1)
-							.sort(Sorts.descending("$natural", "-1")).first();
+							.sort(Sorts.descending("add_date", "-1")).first();
 
 					logger.debug("Last record detected!");
 
 					try {
 						RentMonthHolder rent = objectMapper.readValue(
-								(String) lastRecord.get("last_indications"),
+								(String) lastRecord.get("stat"),
 								RentMonthHolder.class);
 
 						this.db.getCollection("rent_const")
@@ -463,18 +480,19 @@ public class DataBaseHelper {
 	 *            - new value
 	 * @return status execute true or false
 	 */
-	public <T> boolean updateRate(String idChat, String field, T value) {
+	public <T> boolean updateField(String collection, String idChat,
+			String field, T value) {
 
 		boolean status = true;
 
 		try {
-			this.db.getCollection("rent_const").updateOne(
-					this.db.getCollection("rent_const")
+			this.db.getCollection(collection).updateOne(
+					this.db.getCollection(collection)
 							.find(Filters.eq("id_chat", idChat)).first(),
 					new Document("$set", new Document(field, value)));
 		} catch (Exception e) {
 			status = false;
-			logger.error("Can't update %s rate! Error: %s", field,
+			logger.error("Can't update %s at %s! Error: %s", field, collection,
 					e.getMessage(), e);
 		}
 
@@ -511,6 +529,41 @@ public class DataBaseHelper {
 								.append("owner", owner));
 
 			}
+
+			boolean primarySet = (rates.get().get("light") != null
+					&& rates.get().get("rent_amount") != null && rates.get()
+					.get("water") != null) ? true : false;
+
+			if (primarySet) {
+				LastIndicationsHolder lastIndications = new LastIndicationsHolder();
+				try {
+					lastIndications.setLight(objectMapper.readValue(
+							(String) rates.get().get("light"),
+							PrimaryLightHolder.class).getIndications());
+
+					lastIndications.setColdWater(objectMapper.readValue(
+							(String) rates.get().get("water"),
+							PrimaryWaterHolder.class).getColdWater());
+					lastIndications.setHotWater(objectMapper.readValue(
+							(String) rates.get().get("water"),
+							PrimaryWaterHolder.class).getHotWater());
+
+					this.db.getCollection("rent_const")
+							.updateOne(
+									this.db.getCollection("rent_const")
+											.find(Filters.eq("id_chat", idChat))
+											.first(),
+									new Document(
+											"$set",
+											new Document(
+													"last_indications",
+													objectMapper
+															.writeValueAsString(lastIndications))));
+
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
 		} catch (Exception e) {
 			status = false;
 			logger.error("Can't insert primary values for %s! Error: %s",
@@ -537,7 +590,8 @@ public class DataBaseHelper {
 							.append("stat",
 									objectMapper.writeValueAsString(total))
 							.append("id_chat", total.getChatId())
-							.append("who_set", total.getOwner()));
+							.append("who_set", total.getOwner())
+							.append("add_date", new Date().getTime()));
 		} catch (Exception e) {
 			status = false;
 			logger.error("Can't insert month stat! Error: %s", e.getMessage(),
@@ -757,7 +811,8 @@ public class DataBaseHelper {
 
 		try {
 			FindIterable<Document> iter = this.db.getCollection("rent_stat")
-					.find(Filters.eq("id_chat", chatId));
+					.find(Filters.eq("id_chat", chatId))
+					.sort(Sorts.descending("add_date", "-1"));
 			iterator = iter.iterator();
 			while (iterator.hasNext()) {
 				Document doc = iterator.next();
@@ -784,7 +839,7 @@ public class DataBaseHelper {
 	 *            - unique chat id
 	 * @return existing flag
 	 */
-	public boolean existRentUser(String chatId, ObjectMapper mapper) {
+	public boolean existRentUser(String chatId) {
 
 		Optional<Document> rentConsts = Optional.empty();
 
@@ -801,14 +856,14 @@ public class DataBaseHelper {
 				if (status && rentConsts.get().get("last_indications") == null) {
 					LastIndicationsHolder lastIndications = new LastIndicationsHolder();
 					try {
-						lastIndications.setLight(mapper.readValue(
+						lastIndications.setLight(objectMapper.readValue(
 								(String) rentConsts.get().get("light"),
 								PrimaryLightHolder.class).getIndications());
 
-						lastIndications.setColdWater(mapper.readValue(
+						lastIndications.setColdWater(objectMapper.readValue(
 								(String) rentConsts.get().get("water"),
 								PrimaryWaterHolder.class).getColdWater());
-						lastIndications.setHotWater(mapper.readValue(
+						lastIndications.setHotWater(objectMapper.readValue(
 								(String) rentConsts.get().get("water"),
 								PrimaryWaterHolder.class).getHotWater());
 
@@ -821,7 +876,8 @@ public class DataBaseHelper {
 												"$set",
 												new Document(
 														"last_indications",
-														mapper.writeValueAsString(lastIndications))));
+														objectMapper
+																.writeValueAsString(lastIndications))));
 
 					} catch (IOException e) {
 						logger.error(e.getMessage(), e);

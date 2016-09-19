@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -40,6 +41,7 @@ public class BotHelper {
 	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, String> commandMapper = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
 
 	static {
 		commandMapper.put("set light", "/setprimarylight");

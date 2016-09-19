@@ -124,7 +124,7 @@ public class PrimaryWaterHolder {
 
 	public boolean isSetWaterIndications() {
 		return (this.coldWater != null && this.hotWater != null
-				&& this.coldWater.size() == this.countHotWaterCounter && this.hotWater
+				&& this.coldWater.size() == this.countColdWaterCounter && this.hotWater
 					.size() == this.countHotWaterCounter) ? true : false;
 	}
 
