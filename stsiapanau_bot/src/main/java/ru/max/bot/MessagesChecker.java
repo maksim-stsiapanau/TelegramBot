@@ -185,6 +185,12 @@ public class MessagesChecker implements Runnable {
 						}
 
 						text = text.trim().toLowerCase();
+
+						if (text.contains(",")) {
+							// need for double value
+							text = text.replace(",", ".");
+						}
+
 						boolean isMapper = commandMapper.containsKey(text);
 						String answer = "I can't answer at this question(";
 
@@ -621,13 +627,15 @@ public class MessagesChecker implements Runnable {
 							case "/setmonth": {
 								List<List<String>> buttons = new ArrayList<>();
 								DateTime date = new DateTime();
-								buttons.add(getButtonsList(date.toString("MMM",
-										Locale.US) + "_" + date.getYear()));
+								buttons.add(getButtonsList(date.toString(
+										"MMMM", Locale.US)
+										+ " "
+										+ date.getYear()));
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
-								answer = "For set rent for current month - tap on button below.\n\nFor set rent for another month please use this format:\n\nshortmonthname_year\nExample:may_2016";
+								answer = "For set rent for current month - tap on button below.\n\nFor set rent for another month please use this format:\n\nmonth year\nExample:may 2016";
 							}
 								break;
 							case "/setlight": {
@@ -670,7 +678,8 @@ public class MessagesChecker implements Runnable {
 										.getWaterPrimary();
 
 								List<List<String>> buttons = new ArrayList<>();
-								if (water.getHotWater().size() > 1) {
+								int size = water.getHotWater().size();
+								if (size > 1) {
 									water.getHotWater()
 											.entrySet()
 											.stream()
@@ -681,10 +690,13 @@ public class MessagesChecker implements Runnable {
 																		.getAlias()));
 													});
 								} else {
-									buttons.add(getButtonsList("hot"));
+									if (size == 1) {
+										buttons.add(getButtonsList("hot"));
+									}
 								}
+								size = water.getColdWater().size();
 
-								if (water.getColdWater().size() > 1) {
+								if (size > 1) {
 									water.getColdWater()
 											.entrySet()
 											.stream()
@@ -696,7 +708,9 @@ public class MessagesChecker implements Runnable {
 													});
 
 								} else {
-									buttons.add(getButtonsList("cold"));
+									if (size == 1) {
+										buttons.add(getButtonsList("cold"));
+									}
 								}
 								buttons.add(getButtonsList("back to rent menu"));
 
@@ -844,7 +858,8 @@ public class MessagesChecker implements Runnable {
 						objectMapper.writeValueAsString(waterHolder))) {
 					rh.setNeedReplyMarkup(true);
 					rh.setReplyMarkup(objectMapper
-							.writeValueAsString(getButtons(cacheButtons.get(idChat))));
+							.writeValueAsString(getButtons(cacheButtons
+									.get(idChat))));
 					cacheButtons.remove(idChat);
 					answer = "Hot water rate updated successfully!";
 				}
@@ -878,7 +893,8 @@ public class MessagesChecker implements Runnable {
 						objectMapper.writeValueAsString(waterHolder))) {
 					rh.setNeedReplyMarkup(true);
 					rh.setReplyMarkup(objectMapper
-							.writeValueAsString(getButtons(cacheButtons.get(idChat))));
+							.writeValueAsString(getButtons(cacheButtons
+									.get(idChat))));
 					cacheButtons.remove(idChat);
 					answer = "Cold water rate updated successfully!";
 				}
@@ -912,7 +928,8 @@ public class MessagesChecker implements Runnable {
 						objectMapper.writeValueAsString(waterHolder))) {
 					rh.setNeedReplyMarkup(true);
 					rh.setReplyMarkup(objectMapper
-							.writeValueAsString(getButtons(cacheButtons.get(idChat))));
+							.writeValueAsString(getButtons(cacheButtons
+									.get(idChat))));
 					cacheButtons.remove(idChat);
 					answer = "Outfall rate updated successfully!";
 				}
@@ -981,16 +998,17 @@ public class MessagesChecker implements Runnable {
 				logger.error(e.getMessage(), e);
 				return "Wrong format! Value must be a number! Try again";
 			}
-			
+
 			if (DataBaseHelper.getInstance().updateField("rent_const", idChat,
 					"rent_amount", value)) {
 				answer = "Rent amount rate updated successfully!";
 				rh.setNeedReplyMarkup(true);
 				try {
 					rh.setReplyMarkup(objectMapper
-							.writeValueAsString(getButtons(cacheButtons.get(idChat))));
+							.writeValueAsString(getButtons(cacheButtons
+									.get(idChat))));
 				} catch (JsonProcessingException e) {
-					logger.error(e.getMessage(),e);
+					logger.error(e.getMessage(), e);
 				}
 				cacheButtons.remove(idChat);
 			}
@@ -1008,14 +1026,9 @@ public class MessagesChecker implements Runnable {
 			break;
 		case "/getstatbymonth": {
 			setDefaultRentButtons(rh);
-			if (checkStrByRegexp(text, "[a-z]{3,4}_{1}[0-9]{4}$")) {
-				answer = DataBaseHelper.getInstance().getStatByMonth(text,
-						idChat);
-				if (answer.length() == 0) {
-					answer = "Asked month not found! Try another month!)";
-				}
-			} else {
-				answer = "Wrong format. For check format use command - /rent";
+			answer = DataBaseHelper.getInstance().getStatByMonth(text, idChat);
+			if (answer.length() == 0) {
+				answer = "Asked month not found! Try another month!)";
 			}
 		}
 
@@ -1030,7 +1043,7 @@ public class MessagesChecker implements Runnable {
 								outfall))) : Optional.ofNullable(null);
 
 				if (answerTemp.isPresent()) {
-					answer = answerTemp.get() + " rub";
+					answer = String.format("%.2f", answerTemp.get()) + " rub";
 					rentData.remove(idChat);
 				} else {
 					answer = "Water and light didn't set. You need set water and light indications";
@@ -1068,7 +1081,7 @@ public class MessagesChecker implements Runnable {
 		}
 			break;
 		case "/setmonth": {
-			if (checkStrByRegexp(text, "[a-z]{3,4}_{1}[0-9]{4}$")) {
+			if (text.split(" ").length == 2) {
 				Optional<RentHolder> rentHolder = rentData.get(idChat);
 
 				if (null != rentHolder) {
@@ -1081,7 +1094,7 @@ public class MessagesChecker implements Runnable {
 				}
 			} else {
 				isRemoveCommand = false;
-				return "Wrong format. Please use this format: shortmonthname_year (may_2016)";
+				return "Wrong format. Please use this format: month year (may 2016)";
 			}
 		}
 			break;
@@ -1400,7 +1413,7 @@ public class MessagesChecker implements Runnable {
 						} catch (JsonProcessingException e) {
 							logger.error(e.getMessage(), e);
 						}
-						answer = sb.append("\nMaybe you have ")
+						answer = sb.append("\n\nMaybe you have ")
 								.append(existCounters).append(" counter of ")
 								.append(text).append(" water").toString();
 					} else {
@@ -1421,7 +1434,25 @@ public class MessagesChecker implements Runnable {
 							Integer counter = null;
 
 							try {
-								counter = Integer.valueOf(text);
+								StringBuilder sb = new StringBuilder();
+
+								if (null != pwh.getHotWater()) {
+									pwh.getHotWater()
+											.entrySet()
+											.stream()
+											.forEach(
+													e -> {
+														if (text.equalsIgnoreCase(e
+																.getValue()
+																.getAlias())) {
+															sb.append(e
+																	.getKey());
+														}
+													});
+								}
+
+								counter = Integer.valueOf((sb.toString()
+										.length() > 0) ? sb.toString() : text);
 								if (pwh.getCountHotWaterCounter() > 1
 										&& counter > pwh
 												.getCountHotWaterCounter()) {
@@ -1477,13 +1508,22 @@ public class MessagesChecker implements Runnable {
 							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
 									.getHotWater()).lastKey();
 
+							String existAlias = pwh.getHotWater().get(lastKey)
+									.getAlias();
+
+							Double value = null;
+
 							if (pwh.getCountHotWaterCounter() > 1) {
 								String[] temp = text.trim().split(" ");
 
-								pwh.getHotWater()
-										.get(lastKey)
-										.setPrimaryIndication(
-												Double.valueOf(temp[0]));
+								try {
+									value = Double.valueOf(temp[0]);
+								} catch (NumberFormatException e) {
+									return "Wrong format! Value must be a number. Try again";
+								}
+
+								pwh.getHotWater().get(lastKey)
+										.setPrimaryIndication(value);
 								pwh.getHotWater().get(lastKey)
 										.setAlias(temp[1]);
 
@@ -1492,7 +1532,8 @@ public class MessagesChecker implements Runnable {
 
 								while (iter.hasNext()) {
 									String e = iter.next();
-									if (e.equalsIgnoreCase(lastKey.toString())) {
+									if (e.equalsIgnoreCase(lastKey.toString())
+											|| null != existAlias) {
 										iter.set(e.replace(e,
 												getEmoji("E29C85") + " "
 														+ temp[1]));
@@ -1509,10 +1550,15 @@ public class MessagesChecker implements Runnable {
 								}
 
 							} else {
-								pwh.getHotWater()
-										.get(lastKey)
-										.setPrimaryIndication(
-												Double.valueOf(text));
+
+								try {
+									value = Double.valueOf(text);
+								} catch (NumberFormatException e) {
+									return "Wrong format! Value must be a number. Try again";
+								}
+
+								pwh.getHotWater().get(lastKey)
+										.setPrimaryIndication(value);
 							}
 
 							answer = new StringBuilder(
@@ -1555,7 +1601,26 @@ public class MessagesChecker implements Runnable {
 							Integer counter = null;
 
 							try {
-								counter = Integer.valueOf(text);
+								StringBuilder sb = new StringBuilder();
+
+								if (null != pwh.getColdWater()) {
+									pwh.getColdWater()
+											.entrySet()
+											.stream()
+											.forEach(
+													e -> {
+														if (text.equalsIgnoreCase(e
+																.getValue()
+																.getAlias())) {
+															sb.append(e
+																	.getKey());
+														}
+													});
+								}
+
+								counter = Integer.valueOf((sb.toString()
+										.length() > 0) ? sb.toString() : text);
+
 								if (pwh.getCountColdWaterCounter() > 1
 										&& counter > pwh
 												.getCountColdWaterCounter()) {
@@ -1606,13 +1671,23 @@ public class MessagesChecker implements Runnable {
 						} else {
 							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
 									.getColdWater()).lastKey();
+
+							String existAlias = pwh.getColdWater().get(lastKey)
+									.getAlias();
+
+							Double value = null;
+
 							if (pwh.getCountColdWaterCounter() > 1) {
 								String[] temp = text.trim().split(" ");
 
-								pwh.getColdWater()
-										.get(lastKey)
-										.setPrimaryIndication(
-												Double.valueOf(temp[0]));
+								try {
+									value = Double.valueOf(temp[0]);
+								} catch (NumberFormatException e) {
+									return "Wrong format! Value must be a number. Try again";
+								}
+
+								pwh.getColdWater().get(lastKey)
+										.setPrimaryIndication(value);
 								pwh.getColdWater().get(lastKey)
 										.setAlias(temp[1]);
 
@@ -1621,7 +1696,8 @@ public class MessagesChecker implements Runnable {
 
 								while (iter.hasNext()) {
 									String e = iter.next();
-									if (e.equalsIgnoreCase(lastKey.toString())) {
+									if (e.equalsIgnoreCase(lastKey.toString())
+											|| null != existAlias) {
 										iter.set(e.replace(e,
 												getEmoji("E29C85") + " "
 														+ temp[1]));
@@ -1638,10 +1714,15 @@ public class MessagesChecker implements Runnable {
 								}
 
 							} else {
-								pwh.getColdWater()
-										.get(lastKey)
-										.setPrimaryIndication(
-												Double.valueOf(text));
+
+								try {
+									value = Double.valueOf(text);
+								} catch (NumberFormatException e) {
+									return "Wrong format! Value must be a number. Try again";
+								}
+
+								pwh.getColdWater().get(lastKey)
+										.setPrimaryIndication(value);
 							}
 
 							answer = new StringBuilder("Ok. Counter number ")
@@ -1681,10 +1762,24 @@ public class MessagesChecker implements Runnable {
 					// check finish set
 					if (pwh.isSetWaterIndications() && !pwh.isWaitValue()) {
 						List<List<String>> buttons = new ArrayList<>();
+						List<String> names = new ArrayList<>();
+						String[] temp = {};
 
-						buttons.add(getButtonsList("hot", "cold",
-								"outfall rate"));
+						if (pwh.getCountHotWaterCounter() > 0) {
+							names.add("hot");
+						} else {
+							pwh.setHotWaterRate(0.0);
+						}
 
+						if (pwh.getCountColdWaterCounter() > 0) {
+							names.add("cold");
+						} else {
+							pwh.setColdWaterRate(0.0);
+						}
+
+						names.add("outfall rate");
+
+						buttons.add(getButtonsList(names.toArray(temp)));
 						buttons.add(getButtonsList("back to rent menu"));
 
 						cacheButtons.put(idChat, buttons);
@@ -1796,6 +1891,44 @@ public class MessagesChecker implements Runnable {
 
 						try {
 							countCounters = Integer.valueOf(text);
+
+							if (countCounters == 0) {
+
+								String hot = "hot";
+								String cold = "cold";
+
+								switch (pwh.getTypeOfWater()) {
+								case "hot":
+									pwh.setHotWater();
+									pwh.setCountHotWaterCounter(0);
+									hot = getEmoji("E29C85") + " " + hot;
+									break;
+								case "cold":
+									pwh.setColdWater();
+									pwh.setCountHotWaterCounter(0);
+									cold = getEmoji("E29C85") + " " + cold;
+									break;
+
+								default:
+									break;
+								}
+								List<List<String>> buttons = new ArrayList<>();
+								buttons.add(getButtonsList(hot, cold));
+								buttons.add(getButtonsList("back to rent menu"));
+
+								rh.setNeedReplyMarkup(true);
+								try {
+									rh.setReplyMarkup(objectMapper
+											.writeValueAsString(getButtons(buttons)));
+								} catch (JsonProcessingException e) {
+									logger.error(e.getMessage(), e);
+								}
+
+								pwh.setWaterSet(false);
+								pwh.setTypeOfWater(null);
+
+								return answer = "Indications for hot water set successfully";
+							}
 
 							if (countCounters > 5) {
 								countCounters = 5;

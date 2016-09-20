@@ -208,7 +208,7 @@ public class DataBaseHelper {
 					int sizeColdWater = rentHolder.getColdWater().size();
 					int sizeHotWater = rentHolder.getHotWater().size();
 
-					if (sizeColdWater > 0 && sizeHotWater > 0) {
+					if (sizeColdWater > 0) {
 						sb.append("\nCold water");
 						rentHolder
 								.getColdWater()
@@ -241,7 +241,9 @@ public class DataBaseHelper {
 																	.getRate()))
 													.append(" rub");
 										});
+					}
 
+					if (sizeHotWater > 0) {
 						sb.append("\n\nHot water");
 						rentHolder
 								.getHotWater()
@@ -274,21 +276,21 @@ public class DataBaseHelper {
 													.append(" rub");
 										});
 
-						Optional<Counter> outfall = Optional
-								.ofNullable(rentHolder.getOutfall());
+					}
 
-						if (outfall.isPresent()) {
+					Optional<Counter> outfall = Optional.ofNullable(rentHolder
+							.getOutfall());
 
-							sb.append("\n\nOutfall - Count: ")
-									.append(outfall.get().getUsed())
-									.append("; Price: ")
-									.append(String.format("%.2f", outfall.get()
-											.getPrice()))
-									.append(" rub; Rate: ")
-									.append(String.format("%.2f", outfall.get()
-											.getRate())).append(" rub");
+					if (outfall.isPresent()) {
 
-						}
+						sb.append("\n\nOutfall - Count: ")
+								.append(outfall.get().getUsed())
+								.append("; Price: ")
+								.append(String.format("%.2f", outfall.get()
+										.getPrice()))
+								.append(" rub; Rate: ")
+								.append(String.format("%.2f", outfall.get()
+										.getRate())).append(" rub");
 
 					}
 

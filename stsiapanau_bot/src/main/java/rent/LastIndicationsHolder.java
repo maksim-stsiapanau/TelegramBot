@@ -48,7 +48,6 @@ public class LastIndicationsHolder {
 	}
 
 	public <T, V> Map<T, V> copyMap(Map<T, V> map) {
-
 		return map
 				.entrySet()
 				.stream()
