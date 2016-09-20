@@ -194,8 +194,8 @@ public class MessagesChecker implements Runnable {
 						boolean isMapper = commandMapper.containsKey(text);
 						String answer = "I can't answer at this question(";
 
-						if (typeCommand.equalsIgnoreCase("bot_command")
-								|| isMapper) {
+						if ((typeCommand.equalsIgnoreCase("bot_command") || isMapper)
+								&& Integer.valueOf(id) > 0) {
 
 							if (isMapper) {
 								text = commandMapper.get(text);
@@ -345,6 +345,7 @@ public class MessagesChecker implements Runnable {
 							}
 								break;
 							case "/rent": {
+								cacheButtons.remove(id);
 								List<List<String>> buttons = new ArrayList<>();
 
 								if (DataBaseHelper.getInstance().existRentUser(
@@ -486,17 +487,16 @@ public class MessagesChecker implements Runnable {
 									answer = "You have one-tariff counter. Please set new value for it";
 									break;
 								case 2:
-									answer = "You have two-tariff counter. Please set new value for it";
+									answer = "You have two-tariff counter. Use buttons below for update of needed tariff";
 									break;
 								case 3:
-									answer = "You have three-tariff counter. Please set new value for it";
+									answer = "You have three-tariff counter. Use buttons below for update of needed tariff";
 									break;
 								default:
 									break;
 								}
 
 								if (sizeRates > 1) {
-									answer = "You have one-tariff counter. Please set new value for it";
 									List<List<String>> buttons = new ArrayList<>();
 									List<String> names = new ArrayList<>();
 									buttons.add(names);
@@ -860,7 +860,6 @@ public class MessagesChecker implements Runnable {
 					rh.setReplyMarkup(objectMapper
 							.writeValueAsString(getButtons(cacheButtons
 									.get(idChat))));
-					cacheButtons.remove(idChat);
 					answer = "Hot water rate updated successfully!";
 				}
 			} catch (IOException e) {
@@ -895,7 +894,6 @@ public class MessagesChecker implements Runnable {
 					rh.setReplyMarkup(objectMapper
 							.writeValueAsString(getButtons(cacheButtons
 									.get(idChat))));
-					cacheButtons.remove(idChat);
 					answer = "Cold water rate updated successfully!";
 				}
 			} catch (IOException e) {
@@ -930,7 +928,6 @@ public class MessagesChecker implements Runnable {
 					rh.setReplyMarkup(objectMapper
 							.writeValueAsString(getButtons(cacheButtons
 									.get(idChat))));
-					cacheButtons.remove(idChat);
 					answer = "Outfall rate updated successfully!";
 				}
 			} catch (IOException e) {
@@ -941,51 +938,80 @@ public class MessagesChecker implements Runnable {
 			break;
 		case "/changelightrate": {
 			try {
-				PrimaryLightHolder light = objectMapper.readValue(
-						(String) DataBaseHelper.getInstance().getFirstValue(
-								"rent_const", "light",
-								Filters.eq("id_chat", idChat)),
-						PrimaryLightHolder.class);
+				boolean exit = false;
+				PrimaryLightHolder light = (chatObjectMapper.get(idChat) == null) ? objectMapper
+						.readValue(
+								(String) DataBaseHelper.getInstance()
+										.getFirstValue("rent_const", "light",
+												Filters.eq("id_chat", idChat)),
+								PrimaryLightHolder.class)
+						: (PrimaryLightHolder) chatObjectMapper.get(idChat);
 
-				// Map<>
+				Map<String, Double> lightRates = light.getRates();
+
+				int sizeRates = lightRates.size();
+
+				switch (sizeRates) {
+				case 1: {
+					try {
+						exit = true;
+						light.getRates().put("t1", Double.valueOf(text));
+						answer = "Rate updated successfully!";
+					} catch (NumberFormatException e) {
+						isRemoveCommand = false;
+						return "Wrong format! Value must be a number. Try again";
+					}
+				}
+					break;
+				case 2:
+				case 3:
+					Double value = null;
+					try {
+						value = Double.valueOf(text);
+					} catch (NumberFormatException e) {
+						/**
+						 * nothing
+						 */
+					}
+
+					if (null != value) {
+						String key = null;
+						for (Entry<String, Double> entry : light.getRates()
+								.entrySet()) {
+							if (entry.getValue().equals(new Double(0.0))) {
+								entry.setValue(value);
+								key = entry.getKey();
+							}
+						}
+						exit = true;
+						answer = "Rate for " + key + " updated successfully!";
+					} else if (light.getRates().containsKey(text.toLowerCase())) {
+						chatObjectMapper.put(idChat, light);
+						hideKeybord(rh);
+						isRemoveCommand = false;
+						light.getRates().put(text, new Double(0.0));
+						answer = "Please set new value for " + text;
+					} else {
+						isRemoveCommand = false;
+						return "Wrong format! Use buttons below for choosing tariff. Try again";
+					}
+					break;
+				default:
+					break;
+				}
+
+				if (exit) {
+					DataBaseHelper.getInstance().updateField("rent_const",
+							idChat, "light",
+							objectMapper.writeValueAsString(light));
+					rh.setNeedReplyMarkup(true);
+					rh.setReplyMarkup(objectMapper
+							.writeValueAsString(getButtons(cacheButtons
+									.get(idChat))));
+				}
 
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			setDefaultRentButtons(rh);
-			String[] data = text.split("-");
-			String typeRate = data[0].trim().toLowerCase();
-
-			switch (typeRate) {
-			case "t1":
-				if (DataBaseHelper.getInstance().updateField("rent_const",
-						idChat, "t1_rate", Double.parseDouble(data[1].trim()))) {
-					answer = "T1 rate updated successfully!";
-				} else {
-					answer = "Can't update T1 rate! Ask my father to see logs(";
-				}
-				break;
-			case "t2":
-				if (DataBaseHelper.getInstance().updateField("rent_const",
-						idChat, "t2_rate", Double.parseDouble(data[1].trim()))) {
-					answer = "T2 rate updated successfully!";
-				} else {
-					answer = "Can't update T2 rate! Ask my father to see logs(";
-				}
-				break;
-			case "t3":
-				if (DataBaseHelper.getInstance().updateField("rent_const",
-						idChat, "t3_rate", Double.parseDouble(data[1].trim()))) {
-					answer = "T3 rate updated successfully!";
-				} else {
-					answer = "Can't update T3 rate! Ask my father to see logs(";
-				}
-				break;
-			default:
-				answer = "Wrong command! You have 3 rates of light. Please use this format:\n\nt1 - value\nt2 - value\nt3 - value";
-				break;
+				logger.error(e.getMessage(), e);
 			}
 		}
 			break;
