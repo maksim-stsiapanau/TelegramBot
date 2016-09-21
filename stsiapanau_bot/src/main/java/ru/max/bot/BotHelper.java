@@ -3,19 +3,25 @@ package ru.max.bot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import rent.RentHolder;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Useful methods
@@ -27,38 +33,34 @@ public class BotHelper {
 
 	private static final Logger logger = LogManager.getLogger(BotHelper.class
 			.getName());
-	public static ConcurrentHashMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, Boolean> adaMode = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, Boolean> editAdaEvent = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> adaEvents = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, String> commandMapper = new ConcurrentHashMap<>();
-
+	public static final ObjectMapper objectMapper = new ObjectMapper();
+	public static ConcurrentMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, String> activeCommand = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, String> commandMapper = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
+	
 	static {
+		commandMapper.put("set light", "/setprimarylight");
+		commandMapper.put("set water", "/setprimarywater");
+		commandMapper.put("set rent amount", "/setprimaryrentamount");
 		commandMapper.put("rent", "/rent");
 		commandMapper.put("back to rent menu", "/rent");
 		commandMapper.put("calc", "/calc");
-		commandMapper.put("save", "/save");
-		commandMapper.put("ada", "/ada");
-		commandMapper.put("back to ada menu", "/ada");
 		commandMapper.put("home", "/start");
 		commandMapper.put("payments", "/gethistory");
 		commandMapper.put("rates", "/getrates");
 		commandMapper.put("change rates", "/changerates");
 		commandMapper.put("add month", "/rent_add");
-		commandMapper.put("new primary counters", "/setprimarycounters");
-		commandMapper.put("month", "/setmonth");
+		commandMapper.put("new primary", "/setprimarycounters");
+		commandMapper.put("name of month", "/setmonth");
 		commandMapper.put("light", "/setlight");
 		commandMapper.put("water", "/setwater");
 		commandMapper.put("takeout", "/settakeout");
 		commandMapper.put("details", "/getstatbymonth");
-		commandMapper.put("clear all", "/purge");
+		commandMapper.put("remove rent", "/purge");
 		commandMapper.put("remove payment", "/delmonthstat");
-		commandMapper.put("added statistics", "/getstat");
-		commandMapper.put("add events", "/setevents");
-		commandMapper.put("see events", "/getevents");
-		commandMapper.put("remove all events", "/delall");
-		commandMapper.put("remove event", "/delone");
+		commandMapper.put("current statistic", "/getstat");
 		commandMapper.put("hot water", "/changehotwaterrate");
 		commandMapper.put("cold water", "/changecoldwaterrate");
 		commandMapper.put("outfall", "/changeoutfallrate");
@@ -131,5 +133,15 @@ public class BotHelper {
 			result = true;
 		}
 		return result;
+	}
+
+	public static String getEmoji(String hexCode) {
+		String done = null;
+		try {
+			done = new String(Hex.decodeHex(hexCode.toCharArray()), "UTF-8");
+		} catch (UnsupportedEncodingException | DecoderException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return done;
 	}
 }

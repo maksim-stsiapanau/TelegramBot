@@ -1,6 +1,6 @@
 package db;
 
-import rent.RentHolder;
+import rent.RentMonthHolder;
 
 /**
  * Async saver for month rent stat
@@ -10,15 +10,15 @@ import rent.RentHolder;
  */
 public class MonthSaver implements Runnable {
 
-	private final RentHolder rh;
+	private final RentMonthHolder total;
 
-	public MonthSaver(RentHolder rh) {
-		this.rh = rh;
+	public MonthSaver(RentMonthHolder rh) {
+		this.total = rh;
 	}
 
 	@Override
 	public void run() {
 
-		DataBaseHelper.getInstance().insertMonthStat(this.rh);
+		DataBaseHelper.getInstance().insertMonthStat(this.total);
 	}
 }

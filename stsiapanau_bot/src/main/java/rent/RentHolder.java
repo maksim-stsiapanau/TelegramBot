@@ -1,107 +1,198 @@
 package rent;
 
+import static ru.max.bot.BotHelper.objectMapper;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.mongodb.client.model.Filters;
+
+import db.DataBaseHelper;
 import db.MonthSaver;
 
-/**
- * 
- * Information about added month
- * 
- * @author Maksim Stepanov
- * @email maksim.stsiapanau@gmail.com
- */
 public class RentHolder {
 
+	private PrimaryLightHolder lightPrimary;
+	private PrimaryWaterHolder waterPrimary;
+	private LastIndicationsHolder lastIndications;
 	private final String chatId;
 	private final String owner;
-	private Long rentAmount;
-	private double T1Rate;
-	private double T2Rate;
-	private double T3Rate;
-	private double coldWaterRate;
-	private double hotWaterRate;
-	private double outFallRate;
-	private String monthRent;
-	private double countT1;
-	private double usedT1;
-	private double priceT1;
-	private double countT2;
-	private double usedT2;
-	private double priceT2;
-	private double countT3;
-	private double usedT3;
-	private double priceT3;
-	private double countColdWater;
-	private double usedColdWater;
-	private double priceColdWater;
-	private double countHotWater;
-	private double usedHotWater;
-	private double priceHotWater;
-	private double countOutFall;
-	private double priceOutFall;
-	private double lastT1Count;
-	private double lastT2Count;
-	private double lastT3Count;
-	private double lastColdWaterCount;
-	private double lastHotWaterCount;
-	private Double total;
-	private boolean setLight;
-	private boolean setWater;
-	private double takeout = 0.0;
-	private String takeoutDesc;
-	private RatesHolder rentConst;
+	private Map<String, Double> currentLightIndications;
+	private Map<Integer, WaterHolder> currentHotWaterIndications;
+	private Map<Integer, WaterHolder> currentColdWaterIndications;
+	private Double takeout;
+	private String takeoutDescription;
+	private String monthOfRent;
+	private String lightTypeActive;
+	private String waterTypeActive;
+	private List<List<String>> waterButtons;
+	private String buttonWaterCounterActive;
+	private Double rentAmount;
+
+	// need if user decides change indicators
+	private Map<String, Integer> addedWater;
 
 	public RentHolder(String chatId, String owner) {
 		this.chatId = chatId;
 		this.owner = owner;
-		this.setLight = false;
-		this.setWater = false;
-		this.rentConst = RatesHolder.getInstance(this.chatId);
-		this.rentAmount = this.rentConst.getRentAmount();
-		this.T1Rate = this.rentConst.getT1Rate();
-		this.T2Rate = this.rentConst.getT2Rate();
-		this.T3Rate = this.rentConst.getT3Rate();
-		this.coldWaterRate = this.rentConst.getColdWaterRate();
-		this.hotWaterRate = this.rentConst.getHotWaterRate();
-		this.outFallRate = this.rentConst.getOutfallRate();
-		this.lastColdWaterCount = this.rentConst.getLastColdWaterCount();
-		this.lastHotWaterCount = this.rentConst.getLastHotWaterCount();
-		this.lastT1Count = this.rentConst.getLastT1Count();
-		this.lastT2Count = this.rentConst.getLastT2Count();
-		this.lastT3Count = this.rentConst.getLastT3Count();
 	}
 
-	public Double getTotal(Boolean needOutfall) {
+	public void initIndications() throws JsonParseException,
+			JsonMappingException, IOException {
 
-		if (this.setLight && this.setWater && this.total == null) {
-			this.usedT1 = this.countT1 - this.lastT1Count;
-			this.priceT1 = this.usedT1 * this.T1Rate;
-			this.usedT2 = this.countT2 - this.lastT2Count;
-			this.priceT2 = this.usedT2 * this.T2Rate;
-			this.usedT3 = this.countT3 - this.lastT3Count;
-			this.priceT3 = this.usedT3 * this.T3Rate;
-			this.usedColdWater = this.countColdWater - this.lastColdWaterCount;
-			this.priceColdWater = this.usedColdWater * this.coldWaterRate;
-			this.usedHotWater = this.countHotWater - this.lastHotWaterCount;
-			this.priceHotWater = this.usedHotWater * this.hotWaterRate;
-			this.countOutFall = this.usedColdWater + this.usedHotWater;
-			this.priceOutFall = (null != needOutfall && needOutfall) ? (this.outFallRate * this.countOutFall)
-					: 0.0;
-			this.total = this.priceColdWater + this.priceHotWater
-					+ this.priceOutFall + this.priceT1 + this.priceT2
-					+ this.priceT3 + this.rentAmount - this.takeout;
+		this.lightPrimary = objectMapper.readValue(
+				(String) DataBaseHelper.getInstance().getFirstValue(
+						"rent_const", "light",
+						Filters.eq("id_chat", this.chatId)),
+				PrimaryLightHolder.class);
+		this.waterPrimary = objectMapper.readValue(
+				(String) DataBaseHelper.getInstance().getFirstValue(
+						"rent_const", "water",
+						Filters.eq("id_chat", this.chatId)),
+				PrimaryWaterHolder.class);
+		this.lastIndications = objectMapper.readValue(
+				(String) DataBaseHelper.getInstance().getFirstValue(
+						"rent_const", "last_indications",
+						Filters.eq("id_chat", this.chatId)),
+				LastIndicationsHolder.class);
+		this.rentAmount = DataBaseHelper.getInstance()
+				.getFirstValue("rent_const", "rent_amount",
+						Filters.eq("id_chat", this.chatId));
+		this.currentLightIndications = new TreeMap<>();
+		this.currentColdWaterIndications = new TreeMap<>();
+		this.currentHotWaterIndications = new TreeMap<>();
+		this.addedWater = new LinkedHashMap<>();
+
+	}
+
+	/**
+	 * Calculate total amount for rent month and save to database
+	 * 
+	 * @param needOutfall
+	 *            - flag for include ootfall to total amount or not
+	 * @return - total amount for month
+	 */
+	public Double getTotalAmount(Boolean needOutfall) {
+
+		RentMonthHolder totalObj = new RentMonthHolder(this.chatId, this.owner);
+
+		if (isLightSet() && isWaterSet() && this.monthOfRent != null) {
+
+			LastIndicationsHolder lastInds = new LastIndicationsHolder();
+			lastInds.setColdWater(this.currentColdWaterIndications);
+
+			this.currentColdWaterIndications
+					.entrySet()
+					.stream()
+					.forEach(
+							e -> {
+								Integer key = e.getKey();
+								String alias = e.getValue().getAlias();
+								Double rate = this.waterPrimary
+										.getColdWaterRate();
+
+								Double used = e.getValue()
+										.getPrimaryIndication()
+										- this.lastIndications.getColdWater()
+												.get(key)
+												.getPrimaryIndication();
+								Double price = used * rate;
+
+								Counter counter = new Counter(rate, used, price);
+								counter.setAlias(alias);
+								totalObj.getColdWater().put(key, counter);
+							});
+
+			lastInds.setHotWater(this.currentHotWaterIndications);
+
+			this.currentHotWaterIndications
+					.entrySet()
+					.stream()
+					.forEach(
+							e -> {
+								Integer key = e.getKey();
+								String alias = e.getValue().getAlias();
+								Double rate = this.waterPrimary
+										.getHotWaterRate();
+
+								Double used = e.getValue()
+										.getPrimaryIndication()
+										- this.lastIndications.getHotWater()
+												.get(key)
+												.getPrimaryIndication();
+								Double price = used * rate;
+
+								Counter counter = new Counter(rate, used, price);
+								counter.setAlias(alias);
+								totalObj.getHotWater().put(key, counter);
+							});
+
+			if (needOutfall) {
+				Double outfallCount = 0.0;
+
+				for (Entry<Integer, Counter> entry : totalObj.getColdWater()
+						.entrySet()) {
+					outfallCount += entry.getValue().getUsed();
+				}
+
+				for (Entry<Integer, Counter> entry : totalObj.getHotWater()
+						.entrySet()) {
+					outfallCount += entry.getValue().getUsed();
+				}
+
+				Double outfallRate = this.waterPrimary.getOutfallRate();
+
+				totalObj.setOutfall(new Counter(outfallRate, outfallCount,
+						outfallCount * outfallRate));
+			}
+
+			lastInds.setLight(this.currentLightIndications);
+
+			this.currentLightIndications
+					.entrySet()
+					.stream()
+					.forEach(
+							e -> {
+								String key = e.getKey();
+								Double rate = this.lightPrimary.getRates().get(
+										key);
+								Double used = e.getValue()
+										- this.lastIndications.getLight().get(
+												key);
+								Double price = used * rate;
+								totalObj.getLight().put(key,
+										new Counter(rate, used, price));
+							});
+
+			if (this.takeout != null) {
+				totalObj.setTakeout(this.takeout);
+				totalObj.setTakeoutDesc(this.takeoutDescription);
+			}
+
+			totalObj.setMonth(this.monthOfRent);
+			totalObj.setRentAmount(this.rentAmount);
+			totalObj.setLastIndications(lastInds);
 
 			// save month statistic to database
 			ExecutorService exs = Executors.newSingleThreadExecutor();
-			exs.execute(new MonthSaver(this));
+			exs.execute(new MonthSaver(totalObj));
 			exs.shutdown();
+
 		}
-		return this.total;
+
+		return totalObj.getTotalAmount();
 	}
 
 	public String getStatAddedMonth() {
@@ -109,265 +200,152 @@ public class RentHolder {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("Added by: ").append(this.owner).append("\nMonth: ")
-				.append(this.monthRent).append("\nLight\n")
-				.append("T1 indication: ").append(this.countT1)
-				.append("; used: ").append(this.usedT1).append("; price: ")
-				.append(String.format("%.2f", this.priceT1)).append(" rub")
-				.append("\nT2 indication: ").append(this.countT2)
-				.append("; used: ").append(this.usedT2).append("; price: ")
-				.append(String.format("%.2f", this.priceT2)).append(" rub")
-				.append("\nT3 indication: ").append(this.countT3)
-				.append("; used: ").append(this.usedT3).append("; price: ")
-				.append(String.format("%.2f", this.priceT3)).append(" rub")
-				.append("\n\nWater\n").append("Hot water indication: ")
-				.append(this.countHotWater).append("; used: ")
-				.append(this.usedHotWater).append("; price: ")
-				.append(String.format("%.2f", this.priceHotWater))
-				.append(" rub").append("\nCold water indication: ")
-				.append(this.countColdWater).append("; used: ")
-				.append(this.usedColdWater).append("; price: ")
-				.append(String.format("%.2f", this.priceColdWater))
-				.append(" rub").append("\nOutfall water indication: ")
-				.append(this.countOutFall).append("; price: ")
-				.append(String.format("%.2f", this.priceOutFall))
-				.append(" rub").append("\n\nRent Amount: ")
-				.append(this.rentAmount).append(" rub").append("\nTotal: ")
-				.append(String.format("%.2f", this.total)).append(" rub");
+				.append(this.monthOfRent).append("\nLight\n");
 
-		if (this.takeout > 0) {
+		this.currentLightIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(e.getKey()).append(": ")
+									.append(e.getValue()).append("\n");
+						});
+
+		sb.append("\nWater\nCold water:\n");
+
+		this.currentColdWaterIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(
+									(e.getValue().getAlias() == null) ? "cold"
+											: e.getValue().getAlias())
+									.append(": ")
+									.append(e.getValue().getPrimaryIndication())
+									.append("\n");
+						});
+
+		sb.append("\nHot water:\n");
+		this.currentHotWaterIndications
+				.entrySet()
+				.stream()
+				.forEach(
+						e -> {
+							sb.append(
+									(e.getValue().getAlias() == null) ? "hot"
+											: e.getValue().getAlias())
+									.append(": ")
+									.append(e.getValue().getPrimaryIndication())
+									.append("\n");
+						});
+
+		sb.append("\nRent Amount: ").append(this.rentAmount).append(" rub");
+
+		if (this.takeout != null) {
 			sb.append("\nTakeout: ")
 					.append(String.format("%.2f", this.takeout)).append(" rub")
-					.append("\nTakeout desc: ").append(this.takeoutDesc);
+					.append("\nTakeout desc: ").append(this.takeoutDescription);
 		}
 		return sb.toString();
 	}
 
-	public long getRentAmount() {
-		return this.rentAmount;
-	}
-
-	public void setRentAmount(long rentAmount) {
-		this.rentAmount = rentAmount;
-	}
-
-	public double getT1Rate() {
-		return this.T1Rate;
-	}
-
-	public void setT1Rate(double t1Rate) {
-		this.T1Rate = t1Rate;
-	}
-
-	public double getT2Rate() {
-		return this.T2Rate;
-	}
-
-	public void setT2Rate(double t2Rate) {
-		this.T2Rate = t2Rate;
-	}
-
-	public double getT3Rate() {
-		return this.T3Rate;
-	}
-
-	public void setT3Rate(double t3Rate) {
-		T3Rate = t3Rate;
-	}
-
-	public double getColdWaterRate() {
-		return this.coldWaterRate;
-	}
-
-	public void setColdWaterRate(double coldWaterRate) {
-		this.coldWaterRate = coldWaterRate;
-	}
-
-	public double getHotWaterRate() {
-		return this.hotWaterRate;
-	}
-
-	public void setHotWaterRate(double hotWaterRate) {
-		this.hotWaterRate = hotWaterRate;
-	}
-
-	public double getOutFallRate() {
-		return this.outFallRate;
-	}
-
-	public void setOutFallRate(double outFallRate) {
-		this.outFallRate = outFallRate;
-	}
-
-	public String getMonthRent() {
-		return this.monthRent;
-	}
-
-	public void setMonthRent(String monthRent) {
-		this.monthRent = monthRent;
-	}
-
-	public double getCountT1() {
-		return this.countT1;
-	}
-
-	public void setCountT1(double countT1) {
-		this.countT1 = countT1;
-	}
-
-	public double getCountT2() {
-		return this.countT2;
-	}
-
-	public void setCountT2(double countT2) {
-		this.countT2 = countT2;
-	}
-
-	public double getCountT3() {
-		return this.countT3;
-	}
-
-	public void setCountT3(double countT3) {
-		this.countT3 = countT3;
-	}
-
-	public double getCountColdWater() {
-		return this.countColdWater;
-	}
-
-	public void setCountColdWater(double countColdWater) {
-		this.countColdWater = countColdWater;
-	}
-
-	public double getCountHotWater() {
-		return this.countHotWater;
-	}
-
-	public void setCountHotWater(double countHotWater) {
-		this.countHotWater = countHotWater;
-	}
-
-	public double getLastT1Count() {
-		return lastT1Count;
-	}
-
-	public double getLastT2Count() {
-		return this.lastT2Count;
-	}
-
-	public double getLastT3Count() {
-		return this.lastT3Count;
-	}
-
-	public double getLastColdWaterCount() {
-		return this.lastColdWaterCount;
-	}
-
-	public double getLastHotWaterCount() {
-		return this.lastHotWaterCount;
-	}
-
-	public void setSetLight(boolean setLight) {
-		this.setLight = setLight;
-	}
-
-	public void setSetWater(boolean setWater) {
-		this.setWater = setWater;
-	}
-
-	public double getUsedT1() {
-		return this.usedT1;
-	}
-
-	public double getPriceT1() {
-		return priceT1;
-	}
-
-	public double getUsedT2() {
-		return this.usedT2;
-	}
-
-	public double getPriceT2() {
-		return this.priceT2;
-	}
-
-	public double getUsedT3() {
-		return this.usedT3;
-	}
-
-	public double getPriceT3() {
-		return this.priceT3;
-	}
-
-	public double getUsedColdWater() {
-		return this.usedColdWater;
-	}
-
-	public double getPriceColdWater() {
-		return this.priceColdWater;
-	}
-
-	public double getUsedHotWater() {
-		return this.usedHotWater;
-	}
-
-	public double getPriceHotWater() {
-		return this.priceHotWater;
-	}
-
-	public double getCountOutFall() {
-		return this.countOutFall;
-	}
-
-	public double getPriceOutFall() {
-		return this.priceOutFall;
-	}
-
-	public void setLastT1Count(double lastT1Count) {
-		this.lastT1Count = lastT1Count;
-	}
-
-	public void setLastT2Count(double lastT2Count) {
-		this.lastT2Count = lastT2Count;
-	}
-
-	public void setLastT3Count(double lastT3Count) {
-		this.lastT3Count = lastT3Count;
-	}
-
-	public void setLastColdWaterCount(double lastColdWaterCount) {
-		this.lastColdWaterCount = lastColdWaterCount;
-	}
-
-	public void setLastHotWaterCount(double lastHotWaterCount) {
-		this.lastHotWaterCount = lastHotWaterCount;
-	}
-
-	public double getTakeout() {
+	public Double getTakeout() {
 		return this.takeout;
 	}
 
-	public void setTakeout(double takeout) {
+	public void setTakeout(Double takeout) {
 		this.takeout = takeout;
 	}
 
-	public String getTakeoutDesc() {
-		return this.takeoutDesc;
+	public String getTakeoutDescription() {
+		return this.takeoutDescription;
 	}
 
-	public void setTakeoutDesc(String takeoutDesc) {
-		this.takeoutDesc = takeoutDesc;
+	public void setTakeoutDescription(String takeoutDescription) {
+		this.takeoutDescription = takeoutDescription;
+	}
+
+	public String getMonthOfRent() {
+		return this.monthOfRent;
+	}
+
+	public void setMonthOfRent(String monthOfRent) {
+		this.monthOfRent = monthOfRent;
 	}
 
 	public String getOwner() {
 		return this.owner;
 	}
 
-	public String getIdChat() {
-		return this.chatId;
+	public PrimaryLightHolder getLightPrimary() {
+		return this.lightPrimary;
 	}
 
-	public RatesHolder getRentConst() {
-		return this.rentConst;
+	public PrimaryWaterHolder getWaterPrimary() {
+		return this.waterPrimary;
+	}
+
+	public Map<String, Double> getCurrentLightIndications() {
+		return this.currentLightIndications;
+	}
+
+	public Map<Integer, WaterHolder> getCurrentHotWaterIndications() {
+		return this.currentHotWaterIndications;
+	}
+
+	public Map<Integer, WaterHolder> getCurrentColdWaterIndications() {
+		return this.currentColdWaterIndications;
+	}
+
+	public String getLightTypeActive() {
+		return this.lightTypeActive;
+	}
+
+	public void setLightTypeActive(String lightTypeActive) {
+		this.lightTypeActive = lightTypeActive;
+	}
+
+	public boolean isLightSet() {
+		return (this.lightPrimary.getIndications().size() == this.currentLightIndications
+				.size()) ? true : false;
+	}
+
+	public boolean isWaterSet() {
+		return (this.waterPrimary.getColdWater().size() == this.currentColdWaterIndications
+				.size() && this.waterPrimary.getHotWater().size() == this.currentHotWaterIndications
+				.size()) ? true : false;
+	}
+
+	public String getWaterTypeActive() {
+		return waterTypeActive;
+	}
+
+	public void setWaterTypeActive(String waterTypeActive) {
+		this.waterTypeActive = waterTypeActive;
+	}
+
+	public List<List<String>> getWaterButtons() {
+		if (null == this.waterButtons) {
+			this.waterButtons = new ArrayList<List<String>>();
+		}
+		return this.lastIndications.copyList(this.waterButtons);
+	}
+
+	public void setWaterButtons(List<List<String>> waterButtons) {
+		this.waterButtons = this.lastIndications.copyList(waterButtons);
+	}
+
+	public String getButtonWaterCounterActive() {
+		return buttonWaterCounterActive;
+	}
+
+	public void setButtonWaterCounterActive(String buttonWaterCounterActive) {
+		this.buttonWaterCounterActive = buttonWaterCounterActive;
+	}
+
+	public Map<String, Integer> getAddedWater() {
+		return this.addedWater;
 	}
 
 	@Override
