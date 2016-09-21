@@ -580,6 +580,17 @@ public class DataBaseHelper {
 
 		boolean status = true;
 
+		if (null != getFirstDocByFilter(
+				"rent_stat",
+				Filters.and(Filters.eq("month", total.getMonth()),
+						Filters.eq("id_chat", total.getChatId())))) {
+
+			this.db.getCollection("rent_stat").deleteOne(
+					Filters.and(Filters.eq("id_chat", total.getChatId()),
+							Filters.eq("month", total.getMonth())));
+			logger.debug("Month exist! Month will be replace");
+		}
+
 		try {
 			this.db.getCollection("rent_stat").insertOne(
 					new Document("month", total.getMonth())
