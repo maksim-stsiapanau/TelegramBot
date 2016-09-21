@@ -1,8 +1,6 @@
 package ru.max.bot;
 
 import static ru.max.bot.BotHelper.activeCommand;
-import static ru.max.bot.BotHelper.adaEvents;
-import static ru.max.bot.BotHelper.adaMode;
 import static ru.max.bot.BotHelper.cacheButtons;
 import static ru.max.bot.BotHelper.callApiGet;
 import static ru.max.bot.BotHelper.chatObjectMapper;
@@ -30,7 +28,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -211,7 +208,6 @@ public class MessagesChecker implements Runnable {
 							switch (text) {
 							case "/start": {
 								List<List<String>> buttons = new ArrayList<>();
-
 								List<String> buttonNames = new ArrayList<>();
 								buttons.add(buttonNames);
 								buttonNames.add("Rent");
@@ -219,129 +215,11 @@ public class MessagesChecker implements Runnable {
 								StringBuilder sb = new StringBuilder()
 										.append("Hi. I am bot. I can process next operations:\n")
 										.append("Rent (/rent) - calculating rent per month\n");
-
-								if (owner.equalsIgnoreCase("Maksim Stepanov")
-										|| owner.equalsIgnoreCase("Yuliya Stepanova")) {
-									sb.append("/ada (Ada) -  events from Ada's life");
-									buttonNames.add("Ada");
-								}
-
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(objectMapper
 										.writeValueAsString(getButtons(buttons)));
 
 								answer = sb.toString();
-							}
-								break;
-							case "/getevents":
-								answer = DataBaseHelper.getInstance()
-										.getAllEvents();
-								if (answer.length() == 0) {
-									answer = "Events not found";
-								} else {
-									answer = "Ada's events:" + answer;
-								}
-								break;
-							case "/ada": {
-								List<List<String>> buttons = new ArrayList<>();
-								buttons.add(getButtonsList("add events",
-										"see events"));
-								buttons.add(getButtonsList("remove event",
-										"remove all events"));
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								answer = new StringBuilder()
-										.append("You can get or set events related with our Ada by sending these commands:\n")
-										.append("/setevents (Add events) - activate adding event mode. After you must send two simple messages: 1- description; 2- date of event and etc.\n")
-										.append("/save (Save) - saved all added events\n")
-										.append("/getevents (See events) - get all events related with our Ada")
-										.append("/delone (Remove event) - remove event by date\n")
-										.append("/delall (Remove all events) - removed all events related with our Ada\n")
-										.toString();
-							}
-								break;
-							case "/delall": {
-								long countDel = DataBaseHelper.getInstance()
-										.purgeAdaEvents();
-								answer = (countDel != -1) ? countDel
-										+ " Ada's events removed successfully!"
-										: "Oops error! Can't delete Ada's events!";
-							}
-								break;
-							case "/save": {
-								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = new ArrayList<>();
-								buttonNames.add("Back to Ada menu");
-								buttonNames.add("Home");
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								adaMode.remove(id);
-								StringBuilder sb = new StringBuilder();
-								DataBaseHelper
-										.getInstance()
-										.saveAdaEvents(id, owner)
-										.ifPresent(
-												e -> {
-													sb.append("Events: ")
-															.append(e)
-															.append("\n added successfully!");
-												});
-								answer = sb.toString();
-								if (answer.length() == 0) {
-									answer = "Oops error! Can't save Ada's event!";
-								}
-								adaEvents.remove(id);
-							}
-								break;
-							case "/setevents": {
-								List<List<String>> buttons = new ArrayList<>();
-								List<String> buttonNames = new ArrayList<>();
-								buttons.add(buttonNames);
-								buttonNames.add("Save");
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								adaMode.put(id, true);
-								adaEvents
-										.put(id, new ConcurrentLinkedQueue<>());
-								answer = "Add mode activated successfully! I'm ready to get events)";
-							}
-								break;
-							case "/delone": {
-								List<List<String>> buttons = new ArrayList<>();
-
-								DataBaseHelper
-										.getInstance()
-										.getAllEventsDates(id)
-										.stream()
-										.forEach(
-												e -> {
-													List<String> buttonNames = new ArrayList<>();
-													buttons.add(buttonNames);
-													buttonNames.add(e);
-												});
-
-								if (buttons.size() > 0) {
-									List<String> buttonNames = new ArrayList<>();
-									buttons.add(buttonNames);
-									buttonNames.add("Back to Ada menu");
-									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(objectMapper
-											.writeValueAsString(getButtons(buttons)));
-									answer = "Ok. Before using this command recommend check events via 'See events' command.\nChoose event date for deleting";
-								} else {
-									answer = "Not found events for deleting";
-									activeCommand.remove(id);
-								}
-
 							}
 								break;
 							case "/rent": {
@@ -775,23 +653,12 @@ public class MessagesChecker implements Runnable {
 							}
 
 						} else {
-
-							// simple message. check Ada
-							// mode
-							Boolean flag = adaMode.get(id);
-
-							if (null != flag && adaMode.get(id)) {
-								adaEvents.get(id).add(text);
-								answer = "";
+							if (null != activeCommand.get(id)) {
+								answer = processSimpleMessages(id, owner,
+										activeCommand.get(id), text, rh);
 							} else {
-								if (null != activeCommand.get(id)) {
-									answer = processSimpleMessages(id, owner,
-											activeCommand.get(id), text, rh);
-								} else {
-									answer = "Sorry, i can't answer to this message(";
-								}
+								answer = "Sorry, i can't answer to this message(";
 							}
-
 						}
 
 						rh.setResponseMessage(answer);
@@ -829,12 +696,6 @@ public class MessagesChecker implements Runnable {
 		String answer = "";
 
 		switch (command) {
-		case "/delone": {
-			answer = (DataBaseHelper.getInstance().deleteAdaEvent(text)) ? "Event "
-					+ text + " deleted successfully!"
-					: "Can't delete event " + text;
-		}
-			break;
 		case "/changehotwaterrate": {
 			Double value = null;
 			try {

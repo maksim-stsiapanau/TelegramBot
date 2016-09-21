@@ -8,7 +8,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,9 +19,9 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import rent.RentHolder;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Useful methods
@@ -34,14 +34,11 @@ public class BotHelper {
 	private static final Logger logger = LogManager.getLogger(BotHelper.class
 			.getName());
 	public static final ObjectMapper objectMapper = new ObjectMapper();
-	public static ConcurrentHashMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, Boolean> adaMode = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, Boolean> editAdaEvent = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> adaEvents = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, String> activeCommand = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, String> commandMapper = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
-	public static ConcurrentHashMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, String> activeCommand = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, String> commandMapper = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
 
 	static {
 		commandMapper.put("set light", "/setprimarylight");
@@ -50,9 +47,6 @@ public class BotHelper {
 		commandMapper.put("rent", "/rent");
 		commandMapper.put("back to rent menu", "/rent");
 		commandMapper.put("calc", "/calc");
-		commandMapper.put("save", "/save");
-		commandMapper.put("ada", "/ada");
-		commandMapper.put("back to ada menu", "/ada");
 		commandMapper.put("home", "/start");
 		commandMapper.put("payments", "/gethistory");
 		commandMapper.put("rates", "/getrates");
@@ -67,10 +61,6 @@ public class BotHelper {
 		commandMapper.put("remove rent", "/purge");
 		commandMapper.put("remove payment", "/delmonthstat");
 		commandMapper.put("current statistic", "/getstat");
-		commandMapper.put("add events", "/setevents");
-		commandMapper.put("see events", "/getevents");
-		commandMapper.put("remove all events", "/delall");
-		commandMapper.put("remove event", "/delone");
 		commandMapper.put("hot water", "/changehotwaterrate");
 		commandMapper.put("cold water", "/changecoldwaterrate");
 		commandMapper.put("outfall", "/changeoutfallrate");
