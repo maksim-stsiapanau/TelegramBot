@@ -215,8 +215,10 @@ public class DataBaseHelper {
 														" - ");
 											}
 											sb.append("Used: ")
-													.append(e.getValue()
-															.getUsed())
+													.append(String.format(
+															"%.2f", e
+																	.getValue()
+																	.getUsed()))
 													.append("; Price: ")
 													.append(String
 															.format("%.2f", e
@@ -249,8 +251,10 @@ public class DataBaseHelper {
 														" - ");
 											}
 											sb.append("Used: ")
-													.append(e.getValue()
-															.getUsed())
+													.append(String.format(
+															"%.2f", e
+																	.getValue()
+																	.getUsed()))
 													.append("; Price: ")
 													.append(String
 															.format("%.2f", e
@@ -272,7 +276,8 @@ public class DataBaseHelper {
 					if (outfall.isPresent()) {
 
 						sb.append("\n\nOutfall - Count: ")
-								.append(outfall.get().getUsed())
+								.append(String.format("%.2f", outfall.get()
+										.getUsed()))
 								.append("; Price: ")
 								.append(String.format("%.2f", outfall.get()
 										.getPrice()))
@@ -283,7 +288,8 @@ public class DataBaseHelper {
 					}
 
 					sb.append("\n\nRent Amount: ")
-							.append(rentHolder.getRentAmount()).append(" rub");
+							.append(String.format("%.2f",
+									rentHolder.getRentAmount())).append(" rub");
 
 					if (null != rentHolder.getTakeout()) {
 						sb.append("\nTakeout: ")

@@ -23,7 +23,7 @@ public class Main {
 		StringBuilder sb = new StringBuilder();
 
 		DataBaseHelper.getInstance().getToken().ifPresent(e -> {
-			sb.append("https://api.telegram.org/").append(e).append("/");
+			sb.append("https://api.telegram.org/bot").append(e).append("/");
 		});
 
 		String telegramApiUrl = sb.toString();

@@ -930,7 +930,9 @@ public class MessagesChecker implements Runnable {
 								outfall))) : Optional.ofNullable(null);
 
 				if (answerTemp.isPresent()) {
-					answer = String.format("%.2f", answerTemp.get()) + " rub";
+					answer = String.format("%.2f",
+							Double.valueOf(answerTemp.get()))
+							+ " rub";
 					rentData.remove(idChat);
 				} else {
 					answer = "Water and light didn't set. You need set water and light indications";
@@ -1319,6 +1321,7 @@ public class MessagesChecker implements Runnable {
 								&& !pwh.isWaitValue()) {
 
 							Integer counter = null;
+							Double value = null;
 
 							try {
 								StringBuilder sb = new StringBuilder();
@@ -1338,8 +1341,15 @@ public class MessagesChecker implements Runnable {
 													});
 								}
 
-								counter = Integer.valueOf((sb.toString()
-										.length() > 0) ? sb.toString() : text);
+								if (pwh.getCountHotWaterCounter() > 1) {
+									counter = (sb.toString().length() > 0) ? Integer
+											.valueOf(sb.toString()) : Integer
+											.valueOf(text);
+								} else {
+									// one-tariff counter
+									value = Double.valueOf(text);
+								}
+
 								if (pwh.getCountHotWaterCounter() > 1
 										&& counter > pwh
 												.getCountHotWaterCounter()) {
@@ -1366,10 +1376,8 @@ public class MessagesChecker implements Runnable {
 
 								pwh.getHotWater().put(1,
 										new WaterHolder(typeOfWater));
-								pwh.getHotWater()
-										.get(1)
-										.setPrimaryIndication(
-												Double.valueOf(counter));
+								pwh.getHotWater().get(1)
+										.setPrimaryIndication(value);
 
 								pwh.setWaterSet(false);
 								pwh.setTypeOfWater(null);
@@ -1486,7 +1494,7 @@ public class MessagesChecker implements Runnable {
 								&& !pwh.isWaitValue()) {
 
 							Integer counter = null;
-
+							Double value = null;
 							try {
 								StringBuilder sb = new StringBuilder();
 
@@ -1505,8 +1513,14 @@ public class MessagesChecker implements Runnable {
 													});
 								}
 
-								counter = Integer.valueOf((sb.toString()
-										.length() > 0) ? sb.toString() : text);
+								if (pwh.getCountColdWaterCounter() > 1) {
+									counter = (sb.toString().length() > 0) ? Integer
+											.valueOf(sb.toString()) : Integer
+											.valueOf(text);
+								} else {
+									// one-tariff counter
+									value = Double.valueOf(text);
+								}
 
 								if (pwh.getCountColdWaterCounter() > 1
 										&& counter > pwh
@@ -1532,10 +1546,8 @@ public class MessagesChecker implements Runnable {
 							} else {
 								pwh.getColdWater().put(1,
 										new WaterHolder(typeOfWater));
-								pwh.getColdWater()
-										.get(1)
-										.setPrimaryIndication(
-												Double.valueOf(counter));
+								pwh.getColdWater().get(1)
+										.setPrimaryIndication(value);
 
 								pwh.setWaterSet(false);
 								pwh.setTypeOfWater(null);

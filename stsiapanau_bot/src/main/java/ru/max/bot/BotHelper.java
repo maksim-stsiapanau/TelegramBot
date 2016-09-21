@@ -39,7 +39,7 @@ public class BotHelper {
 	public static ConcurrentMap<String, String> commandMapper = new ConcurrentHashMap<>();
 	public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
 	public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
-
+	
 	static {
 		commandMapper.put("set light", "/setprimarylight");
 		commandMapper.put("set water", "/setprimarywater");
