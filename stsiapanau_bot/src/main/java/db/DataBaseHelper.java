@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -166,6 +167,9 @@ public class DataBaseHelper {
 					RentMonthHolder rentHolder = objectMapper.readValue(
 							(String) doc.get("stat"), RentMonthHolder.class);
 
+					Map<String, Double> lightLast = rentHolder
+							.getLastIndications().getLight();
+
 					sb.append("Added by: ")
 							.append(rentHolder.getOwner())
 							.append("\nMonth: ")
@@ -182,8 +186,13 @@ public class DataBaseHelper {
 							.forEach(
 									e -> {
 										sb.append(e.getKey())
-												.append(" - Used: ")
-												.append(e.getValue().getUsed())
+												.append(" - Indication: ")
+												.append(String.format("%.2f",
+														lightLast.get(e
+																.getKey())))
+												.append("; Used: ")
+												.append(String.format("%.2f", e
+														.getValue().getUsed()))
 												.append("; Price: ")
 												.append(String.format("%.2f", e
 														.getValue().getPrice()))
@@ -334,9 +343,12 @@ public class DataBaseHelper {
 				sb.append("\n")
 						.append(document.get("month"))
 						.append(": ")
-						.append(objectMapper.readValue(
-								(String) document.get("stat"),
-								RentMonthHolder.class).getTotalAmount())
+						.append(String
+								.format("%.2f",
+										objectMapper.readValue(
+												(String) document.get("stat"),
+												RentMonthHolder.class)
+												.getTotalAmount()))
 						.append(" rub");
 			}
 		} catch (Exception e) {
