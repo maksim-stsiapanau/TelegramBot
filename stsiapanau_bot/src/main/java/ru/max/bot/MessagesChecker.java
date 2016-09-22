@@ -1411,6 +1411,10 @@ public class MessagesChecker implements Runnable {
 							if (pwh.getCountHotWaterCounter() > 1) {
 								String[] temp = text.trim().split(" ");
 
+								if (temp.length != 2) {
+									return "Wrong format! Format must be value alias. Try again";
+								}
+
 								try {
 									value = Double.valueOf(temp[0]);
 								} catch (NumberFormatException e) {
@@ -1579,6 +1583,9 @@ public class MessagesChecker implements Runnable {
 							if (pwh.getCountColdWaterCounter() > 1) {
 								String[] temp = text.trim().split(" ");
 
+								if (temp.length != 2) {
+									return "Wrong format! Format must be value alias. Try again";
+								}
 								try {
 									value = Double.valueOf(temp[0]);
 								} catch (NumberFormatException e) {
