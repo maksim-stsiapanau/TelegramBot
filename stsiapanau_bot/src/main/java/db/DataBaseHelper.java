@@ -20,6 +20,7 @@ import rent.LastIndicationsHolder;
 import rent.PrimaryLightHolder;
 import rent.PrimaryWaterHolder;
 import rent.RentMonthHolder;
+import rent.WaterHolder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
@@ -167,8 +168,10 @@ public class DataBaseHelper {
 					RentMonthHolder rentHolder = objectMapper.readValue(
 							(String) doc.get("stat"), RentMonthHolder.class);
 
-					Map<String, Double> lightLast = rentHolder
-							.getLastIndications().getLight();
+					LastIndicationsHolder lastData = rentHolder
+							.getLastIndications();
+
+					Map<String, Double> lightLast = lastData.getLight();
 
 					sb.append("Added by: ")
 							.append(rentHolder.getOwner())
@@ -219,11 +222,40 @@ public class DataBaseHelper {
 													.ofNullable(e.getValue()
 															.getAlias());
 
+											Double lastIndication = null;
+											int size = lastData.getColdWater()
+													.size();
+											if (size == 1) {
+												lastIndication = lastData
+														.getColdWater().get(1)
+														.getPrimaryIndication();
+											} else {
+												for (Entry<Integer, WaterHolder> entry : lastData
+														.getColdWater()
+														.entrySet()) {
+
+													WaterHolder wh = entry
+															.getValue();
+
+													if (alias.get().equals(wh
+															.getAlias())) {
+														lastIndication = wh
+																.getPrimaryIndication();
+													}
+												}
+											}
+
 											if (alias.isPresent()) {
 												sb.append(alias.get()).append(
 														" - ");
+
 											}
-											sb.append("Used: ")
+
+											sb.append("Indication: ")
+													.append(String.format(
+															"%.2f",
+															lastIndication))
+													.append("; Used: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()
@@ -259,7 +291,34 @@ public class DataBaseHelper {
 												sb.append(alias.get()).append(
 														" - ");
 											}
-											sb.append("Used: ")
+
+											Double lastIndication = null;
+											int size = lastData.getHotWater()
+													.size();
+											if (size == 1) {
+												lastIndication = lastData
+														.getHotWater().get(1)
+														.getPrimaryIndication();
+											} else {
+												for (Entry<Integer, WaterHolder> entry : lastData
+														.getHotWater()
+														.entrySet()) {
+
+													WaterHolder wh = entry
+															.getValue();
+
+													if (alias.get().equals(wh
+															.getAlias())) {
+														lastIndication = wh
+																.getPrimaryIndication();
+													}
+												}
+											}
+											sb.append("Indication: ")
+													.append(String.format(
+															"%.2f",
+															lastIndication))
+													.append("; Used: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()

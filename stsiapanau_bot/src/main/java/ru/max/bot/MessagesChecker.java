@@ -438,15 +438,12 @@ public class MessagesChecker implements Runnable {
 								break;
 							case "/purge": {
 								List<List<String>> buttons = new ArrayList<>();
-								if (DataBaseHelper.getInstance().purgeAll(id)) {
-									buttons.add(getButtonsList("back to rent menu"));
-									rh.setNeedReplyMarkup(true);
-									rh.setReplyMarkup(objectMapper
-											.writeValueAsString(getButtons(buttons)));
-									answer = "All information about rent removed";
-								} else {
-									answer = "Oops error! Can't delete information!";
-								}
+								buttons.add(getButtonsList("yes"));
+								buttons.add(getButtonsList("back to rent menu"));
+								rh.setNeedReplyMarkup(true);
+								rh.setReplyMarkup(objectMapper
+										.writeValueAsString(getButtons(buttons)));
+								answer = "All information about rent will be remove. Are you sure?";
 							}
 								break;
 							case "/getstat": {
@@ -696,6 +693,28 @@ public class MessagesChecker implements Runnable {
 		String answer = "";
 
 		switch (command) {
+		case "/purge": {
+			if (text.equalsIgnoreCase("yes")) {
+				List<List<String>> buttons = new ArrayList<>();
+				if (DataBaseHelper.getInstance().purgeAll(idChat)) {
+					buttons.add(getButtonsList("back to rent menu"));
+					rh.setNeedReplyMarkup(true);
+					try {
+						rh.setReplyMarkup(objectMapper
+								.writeValueAsString(getButtons(buttons)));
+					} catch (JsonProcessingException e) {
+						logger.error(e.getMessage(), e);
+					}
+					answer = "All information about rent removed";
+				} else {
+					answer = "Oops error! Can't delete information!";
+				}
+			} else {
+				isRemoveCommand = false;
+				return "Wrong format! Use buttons below";
+			}
+		}
+			break;
 		case "/changehotwaterrate": {
 			Double value = null;
 			try {
