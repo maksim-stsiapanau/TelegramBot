@@ -237,8 +237,8 @@ public class DataBaseHelper {
 													WaterHolder wh = entry
 															.getValue();
 
-													if (alias.get().equals(wh
-															.getAlias())) {
+													if (alias.get().equals(
+															wh.getAlias())) {
 														lastIndication = wh
 																.getPrimaryIndication();
 													}
@@ -307,8 +307,8 @@ public class DataBaseHelper {
 													WaterHolder wh = entry
 															.getValue();
 
-													if (alias.get().equals(wh
-															.getAlias())) {
+													if (alias.get().equals(
+															wh.getAlias())) {
 														lastIndication = wh
 																.getPrimaryIndication();
 													}
@@ -579,6 +579,7 @@ public class DataBaseHelper {
 			String idChat, String owner) {
 
 		boolean status = true;
+		boolean primarySet = false;
 
 		try {
 			Optional<Document> rates = Optional.ofNullable(this.db
@@ -590,16 +591,16 @@ public class DataBaseHelper {
 								.find(Filters.eq("id_chat", idChat)).first(),
 						new Document("$set", new Document(field, obj)));
 
+				primarySet = (rates.get().get("light") != null
+						&& rates.get().get("rent_amount") != null && rates
+						.get().get("water") != null) ? true : false;
+
 			} else {
 				this.db.getCollection("rent_const").insertOne(
 						new Document(field, obj).append("id_chat", idChat)
 								.append("owner", owner));
 
 			}
-
-			boolean primarySet = (rates.get().get("light") != null
-					&& rates.get().get("rent_amount") != null && rates.get()
-					.get("water") != null) ? true : false;
 
 			if (primarySet) {
 				LastIndicationsHolder lastIndications = new LastIndicationsHolder();
