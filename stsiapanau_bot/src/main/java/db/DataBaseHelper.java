@@ -99,7 +99,7 @@ public class DataBaseHelper {
 	 * 
 	 * @return message with rates
 	 */
-	public String getRates(String chatId, ObjectMapper mapper) {
+	public String getRates(String chatId, ObjectMapper mapper, boolean isRus) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -109,8 +109,13 @@ public class DataBaseHelper {
 					.find(Filters.eq("id_chat", chatId)).first());
 			document.ifPresent(doc -> {
 
-				sb.append("Rent amount: ").append(doc.get("rent_amount"))
-						.append(" rub.").append("\n\nLight");
+				sb.append(
+						(isRus) ? "<b>Сумма аренды:</b> "
+								: "<b>Rent amount:</b> ")
+						.append(doc.get("rent_amount"))
+						.append(" rub.")
+						.append((isRus) ? "\n\n<b>Электричество</b>"
+								: "\n\n<b>Light</b>");
 
 				try {
 					PrimaryLightHolder plh = mapper.readValue(
@@ -119,19 +124,29 @@ public class DataBaseHelper {
 					for (Entry<String, Double> entry : plh.getRates()
 							.entrySet()) {
 						sb.append("\n").append(entry.getKey()).append(": ")
-								.append(entry.getValue()).append(" rub");
+								.append(entry.getValue())
+								.append((isRus) ? " руб" : " rub");
 					}
 
-					sb.append("\n\nWater\n");
+					sb.append((isRus) ? "\n\n<b>Вода</b>\n"
+							: "\n\n<b>Water</b>\n");
 
 					PrimaryWaterHolder pwh = mapper.readValue(
 							(String) doc.get("water"), PrimaryWaterHolder.class);
 
-					sb.append("Hot water: ").append(pwh.getHotWaterRate())
-							.append(" rub.").append("\nCold water: ")
-							.append(pwh.getColdWaterRate()).append(" rub.")
-							.append("\nOutfall: ").append(pwh.getOutfallRate())
-							.append(" rub.");
+					sb.append(
+							(isRus) ? "Горячая вода: "
+									: "Hot water: ")
+							.append(pwh.getHotWaterRate())
+							.append((isRus) ? " руб" : " rub")
+							.append((isRus) ? "\nХолодная вода: "
+									: "\nCold water: ")
+							.append(pwh.getColdWaterRate())
+							.append(" rub.")
+							.append((isRus) ? "\nВодоотвод: "
+									: "\nOutfall: ")
+							.append(pwh.getOutfallRate())
+							.append((isRus) ? " руб" : " rub");
 
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
@@ -152,7 +167,7 @@ public class DataBaseHelper {
 	 *            - rent month
 	 * @return - String message
 	 */
-	public String getStatByMonth(String month, String idChat) {
+	public String getStatByMonth(String month, String idChat, boolean isRus) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -173,14 +188,18 @@ public class DataBaseHelper {
 
 					Map<String, Double> lightLast = lastData.getLight();
 
-					sb.append("Added by: ")
+					sb.append((isRus) ? "<b>Автор:</b> " : "<b>Added by:</b> ")
 							.append(rentHolder.getOwner())
-							.append("\nMonth: ")
+							.append((isRus) ? "\n<b>Месяц:</b> "
+									: "\n<b>Month:</b> ")
 							.append(rentHolder.getMonth())
-							.append("\nFinal amount: ")
+							.append((isRus) ? "\n<b>Конечная стоимость аренды:</b> "
+									: "\n<b>Final amount:</b> ")
 							.append(String.format("%.2f",
 									rentHolder.getTotalAmount()))
-							.append(" rub").append("\n\nLight\n");
+							.append((isRus) ? " руб" : " rub")
+							.append((isRus) ? "\n\n<b>Электричество</b>\n\n"
+									: "\n\n<b>Light</b>\n\n");
 
 					rentHolder
 							.getLight()
@@ -189,27 +208,34 @@ public class DataBaseHelper {
 							.forEach(
 									e -> {
 										sb.append(e.getKey())
-												.append(" - Indication: ")
+												.append((isRus) ? " - показание: "
+														: " - indication: ")
 												.append(String.format("%.2f",
 														lightLast.get(e
 																.getKey())))
-												.append("; Used: ")
+												.append((isRus) ? "; использовано: "
+														: "; used: ")
 												.append(String.format("%.2f", e
 														.getValue().getUsed()))
-												.append("; Price: ")
+												.append((isRus) ? "; стоимость: "
+														: "; price: ")
 												.append(String.format("%.2f", e
 														.getValue().getPrice()))
-												.append(" rub; Rate: ")
+												.append((isRus) ? " руб; тариф: "
+														: " rub; rate: ")
 												.append(String.format("%.2f", e
 														.getValue().getRate()))
-												.append(" rub").append("\n");
+												.append((isRus) ? " руб"
+														: " rub")
+												.append("\n\n");
 									});
 
 					int sizeColdWater = rentHolder.getColdWater().size();
 					int sizeHotWater = rentHolder.getHotWater().size();
 
 					if (sizeColdWater > 0) {
-						sb.append("\nCold water");
+						sb.append((isRus) ? "\n<b>Холодная вода</b>"
+								: "\n<b>Cold water</b>");
 						rentHolder
 								.getColdWater()
 								.entrySet()
@@ -217,7 +243,7 @@ public class DataBaseHelper {
 								.forEach(
 										e -> {
 
-											sb.append("\n");
+											sb.append("\n\n");
 											Optional<String> alias = Optional
 													.ofNullable(e.getValue()
 															.getAlias());
@@ -251,38 +277,45 @@ public class DataBaseHelper {
 
 											}
 
-											sb.append("Indication: ")
+											sb.append(
+													(isRus) ? "показание: "
+															: "indication: ")
 													.append(String.format(
 															"%.2f",
 															lastIndication))
-													.append("; Used: ")
+													.append((isRus) ? "; использовано: "
+															: "; used: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()
 																	.getUsed()))
-													.append("; Price: ")
+													.append((isRus) ? "; стоимость: "
+															: "; price: ")
 													.append(String
 															.format("%.2f", e
 																	.getValue()
 																	.getPrice()))
-													.append(" rub; Rate: ")
+													.append((isRus) ? " руб; тариф: "
+															: " rub; rate: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()
 																	.getRate()))
-													.append(" rub");
+													.append((isRus) ? " руб"
+															: " rub");
 										});
 					}
 
 					if (sizeHotWater > 0) {
-						sb.append("\n\nHot water");
+						sb.append((isRus) ? "\n\n<b>Горячая вода</b>"
+								: "\n\n<b>Hot water</b>");
 						rentHolder
 								.getHotWater()
 								.entrySet()
 								.stream()
 								.forEach(
 										e -> {
-											sb.append("\n");
+											sb.append("\n\n");
 											Optional<String> alias = Optional
 													.ofNullable(e.getValue()
 															.getAlias());
@@ -314,26 +347,32 @@ public class DataBaseHelper {
 													}
 												}
 											}
-											sb.append("Indication: ")
+											sb.append(
+													(isRus) ? "показание: "
+															: "indication: ")
 													.append(String.format(
 															"%.2f",
 															lastIndication))
-													.append("; Used: ")
+													.append((isRus) ? "; использовано: "
+															: "; used: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()
 																	.getUsed()))
-													.append("; Price: ")
+													.append((isRus) ? "; стоимость: "
+															: "; price: ")
 													.append(String
 															.format("%.2f", e
 																	.getValue()
 																	.getPrice()))
-													.append(" rub; Rate: ")
+													.append((isRus) ? " руб; тариф: "
+															: " rub; rate: ")
 													.append(String.format(
 															"%.2f", e
 																	.getValue()
 																	.getRate()))
-													.append(" rub");
+													.append((isRus) ? " руб"
+															: " rub");
 										});
 
 					}
@@ -343,27 +382,37 @@ public class DataBaseHelper {
 
 					if (outfall.isPresent()) {
 
-						sb.append("\n\nOutfall - Count: ")
+						sb.append(
+								(isRus) ? "\n\n<b>Водоотвод</b> - количество: "
+										: "\n\n<b>Outfall</b> - count: ")
 								.append(String.format("%.2f", outfall.get()
 										.getUsed()))
-								.append("; Price: ")
+								.append((isRus) ? "; стоимость: " : "; price: ")
 								.append(String.format("%.2f", outfall.get()
 										.getPrice()))
-								.append(" rub; Rate: ")
+								.append((isRus) ? " руб; тариф: "
+										: " rub; rate: ")
 								.append(String.format("%.2f", outfall.get()
-										.getRate())).append(" rub");
+										.getRate()))
+								.append((isRus) ? " руб" : " rub");
 
 					}
 
-					sb.append("\n\nRent Amount: ")
+					sb.append(
+							(isRus) ? "\n\n<b>Стоимость аренды:</b> "
+									: "\n\n<b>Rent Amount:</b> ")
 							.append(String.format("%.2f",
-									rentHolder.getRentAmount())).append(" rub");
+									rentHolder.getRentAmount()))
+							.append((isRus) ? " руб" : " rub");
 
 					if (null != rentHolder.getTakeout()) {
-						sb.append("\nTakeout: ")
+						sb.append(
+								(isRus) ? "\n<b>Вычет:</b> "
+										: "\n<b>Takeout:</b> ")
 								.append(String.format("%.2f",
 										rentHolder.getTakeout()))
-								.append(" rub").append(" - ")
+								.append((isRus) ? " руб" : " rub")
+								.append(" - ")
 								.append(rentHolder.getTakeoutDesc());
 					}
 
@@ -385,7 +434,7 @@ public class DataBaseHelper {
 	 * 
 	 * @return String message with history by months
 	 */
-	public String getPaymentsHistory(String chatId) {
+	public String getPaymentsHistory(String chatId, boolean isRus) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -396,7 +445,7 @@ public class DataBaseHelper {
 					.find(Filters.eq("id_chat", chatId))
 					.sort(Sorts.descending("add_date", "-1"));
 			iter = docs.iterator();
-			sb.append("History:\n");
+			sb.append((isRus) ? "История:\n" : "History:\n");
 			while (iter.hasNext()) {
 				Document document = iter.next();
 				sb.append("\n")
@@ -408,7 +457,7 @@ public class DataBaseHelper {
 												(String) document.get("stat"),
 												RentMonthHolder.class)
 												.getTotalAmount()))
-						.append(" rub");
+						.append((isRus) ? " руб" : " rub");
 			}
 		} catch (Exception e) {
 			logger.error("Can't get history! Error: %s", e.getMessage(), e);

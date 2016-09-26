@@ -71,9 +71,9 @@ public class BotHelper {
 		// russian language
 		commandMapperRus.put("свет", "/setprimarylight");
 		commandMapperRus.put("вода", "/setprimarywater");
-		commandMapperRus.put("сумма аренда", "/setprimaryrentamount");
+		commandMapperRus.put("арендная плата", "/setprimaryrentamount");
 		commandMapperRus.put("аренда", "/rent");
-		commandMapperRus.put("назад в основное меню", "/rent");
+		commandMapperRus.put("главное меню", "/rent");
 		commandMapperRus.put("рассчитать", "/calc");
 		commandMapperRus.put("домой", "/start");
 		commandMapperRus.put("платежи", "/gethistory");
@@ -92,7 +92,7 @@ public class BotHelper {
 		commandMapperRus.put("горячая вода", "/changehotwaterrate");
 		commandMapperRus.put("холодная вода", "/changecoldwaterrate");
 		commandMapperRus.put("водоотвод", "/changeoutfallrate");
-		commandMapperRus.put("тариф на свет", "/changelightrate");
+		commandMapperRus.put("электричество", "/changelightrate");
 		commandMapperRus.put("сумма аренды", "/changerentamount");
 
 	}

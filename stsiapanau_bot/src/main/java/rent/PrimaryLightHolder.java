@@ -1,6 +1,5 @@
 package rent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -66,7 +65,7 @@ public class PrimaryLightHolder {
 
 	public void initRates() {
 		if (null == this.rates) {
-			this.rates = new HashMap<>();
+			this.rates = new TreeMap<>();
 		}
 	}
 

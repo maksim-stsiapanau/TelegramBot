@@ -195,12 +195,16 @@ public class RentHolder {
 		return totalObj.getTotalAmount();
 	}
 
-	public String getStatAddedMonth() {
+	public String getStatAddedMonth(boolean isRus) {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("Added by: ").append(this.owner).append("\nMonth: ")
-				.append(this.monthOfRent).append("\nLight\n");
+		sb.append((isRus) ? "<b>Автор:</b> " : "<b>Added by:</b> ")
+				.append(this.owner)
+				.append((isRus) ? "\n<b>Месяц:</b> " : "\n<b>Month:</b> ")
+				.append(this.monthOfRent)
+				.append((isRus) ? "\n\n<b>Электричество</b>\n"
+						: "\n<b>Light</b>\n");
 
 		this.currentLightIndications
 				.entrySet()
@@ -211,7 +215,8 @@ public class RentHolder {
 									.append(e.getValue()).append("\n");
 						});
 
-		sb.append("\nWater\nCold water:\n");
+		sb.append((isRus) ? "\n<b>Холодная вода:</b>\n"
+				: "\n<b>Cold water:</b>\n");
 
 		this.currentColdWaterIndications
 				.entrySet()
@@ -219,33 +224,36 @@ public class RentHolder {
 				.forEach(
 						e -> {
 							sb.append(
-									(e.getValue().getAlias() == null) ? "cold"
-											: e.getValue().getAlias())
-									.append(": ")
+									(e.getValue().getAlias() == null) ? "" : e
+											.getValue().getAlias() + ": ")
 									.append(e.getValue().getPrimaryIndication())
 									.append("\n");
 						});
 
-		sb.append("\nHot water:\n");
+		sb.append((isRus) ? "\n<b>Горячая вода:</b>\n"
+				: "\n<b>Hot water:</b>\n");
 		this.currentHotWaterIndications
 				.entrySet()
 				.stream()
 				.forEach(
 						e -> {
 							sb.append(
-									(e.getValue().getAlias() == null) ? "hot"
-											: e.getValue().getAlias())
-									.append(": ")
+									(e.getValue().getAlias() == null) ? "" : e
+											.getValue().getAlias() + ": ")
 									.append(e.getValue().getPrimaryIndication())
 									.append("\n");
 						});
 
-		sb.append("\nRent Amount: ").append(this.rentAmount).append(" rub");
+		sb.append(
+				(isRus) ? "\n\n<b>Стоимость аренды:</b> "
+						: "\n\n<b>Rent Amount:</b> ").append(this.rentAmount)
+				.append((isRus) ? " руб" : " rub");
 
 		if (this.takeout != null) {
-			sb.append("\nTakeout: ")
-					.append(String.format("%.2f", this.takeout)).append(" rub")
-					.append("\nTakeout desc: ").append(this.takeoutDescription);
+			sb.append((isRus) ? "\n<b>Вычет:</b> " : "\n<b>Takeout:</b> ")
+					.append(String.format("%.2f", this.takeout))
+					.append((isRus) ? " руб" : " rub").append(" - ")
+					.append(this.takeoutDescription);
 		}
 		return sb.toString();
 	}
