@@ -134,17 +134,12 @@ public class DataBaseHelper {
 					PrimaryWaterHolder pwh = mapper.readValue(
 							(String) doc.get("water"), PrimaryWaterHolder.class);
 
-					sb.append(
-							(isRus) ? "Горячая: "
-									: "Hot: ")
+					sb.append((isRus) ? "Горячая: " : "Hot: ")
 							.append(pwh.getHotWaterRate())
 							.append((isRus) ? " руб" : " rub")
-							.append((isRus) ? "\nХолодная: "
-									: "\nCold: ")
-							.append(pwh.getColdWaterRate())
-							.append(" rub.")
-							.append((isRus) ? "\nВодоотвод: "
-									: "\nOutfall: ")
+							.append((isRus) ? "\nХолодная: " : "\nCold: ")
+							.append(pwh.getColdWaterRate()).append(" rub.")
+							.append((isRus) ? "\nВодоотвод: " : "\nOutfall: ")
 							.append(pwh.getOutfallRate())
 							.append((isRus) ? " руб" : " rub");
 
@@ -198,8 +193,8 @@ public class DataBaseHelper {
 							.append(String.format("%.2f",
 									rentHolder.getTotalAmount()))
 							.append((isRus) ? " руб" : " rub")
-							.append((isRus) ? "\n\n<b>Электричество</b>\n\n"
-									: "\n\n<b>Light</b>\n\n");
+							.append((isRus) ? "\n\n<b>Электричество</b>\n"
+									: "\n\n<b>Light</b>\n");
 
 					rentHolder
 							.getLight()
@@ -207,7 +202,7 @@ public class DataBaseHelper {
 							.stream()
 							.forEach(
 									e -> {
-										sb.append(e.getKey())
+										sb.append("<b>" + e.getKey() + "</b>")
 												.append((isRus) ? " - показание: "
 														: " - indication: ")
 												.append(String.format("%.2f",
@@ -226,8 +221,7 @@ public class DataBaseHelper {
 												.append(String.format("%.2f", e
 														.getValue().getRate()))
 												.append((isRus) ? " руб"
-														: " rub")
-												.append("\n\n");
+														: " rub").append("\n");
 									});
 
 					int sizeColdWater = rentHolder.getColdWater().size();
@@ -243,7 +237,7 @@ public class DataBaseHelper {
 								.forEach(
 										e -> {
 
-											sb.append("\n\n");
+											sb.append("\n");
 											Optional<String> alias = Optional
 													.ofNullable(e.getValue()
 															.getAlias());
@@ -272,8 +266,10 @@ public class DataBaseHelper {
 											}
 
 											if (alias.isPresent()) {
-												sb.append(alias.get()).append(
-														" - ");
+												sb.append(
+														"<b>" + alias.get()
+																+ "</b>")
+														.append(" - ");
 
 											}
 
@@ -315,14 +311,16 @@ public class DataBaseHelper {
 								.stream()
 								.forEach(
 										e -> {
-											sb.append("\n\n");
+											sb.append("\n");
 											Optional<String> alias = Optional
 													.ofNullable(e.getValue()
 															.getAlias());
 
 											if (alias.isPresent()) {
-												sb.append(alias.get()).append(
-														" - ");
+												sb.append(
+														"<b>" + alias.get()
+																+ "</b>")
+														.append(" - ");
 											}
 
 											Double lastIndication = null;

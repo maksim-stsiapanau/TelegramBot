@@ -259,13 +259,13 @@ public class MessagesChecker implements Runnable {
 													"удалить все"));
 											answer = new StringBuilder()
 													.append("Вы можете использовать следующий команды:\n\n")
-													.append("<b>добавить месяц</b> - новый месяц аренды\n\n")
-													.append("<b>статистика</b> - статистика по месяцам\n\n")
-													.append("<b>платежи</b> - история платежей\n\n")
-													.append("<b>тарифы</b> - заданные тарифы\n\n")
-													.append("<b>изменить тарифы</b> - изменить заданные тарифы\n\n")
-													.append("<b>начальные показания</b> - изменить начальные показания\n\n")
-													.append("<b>удалить платеж</b> - удалить платеж за месяц\n\n")
+													.append("<b>добавить месяц</b> - новый месяц аренды\n")
+													.append("<b>статистика</b> - статистика по месяцам\n")
+													.append("<b>платежи</b> - история платежей\n")
+													.append("<b>тарифы</b> - заданные тарифы\n")
+													.append("<b>изменить тарифы</b> - изменить заданные тарифы\n")
+													.append("<b>начальные показания</b> - изменить начальные показания\n")
+													.append("<b>удалить платеж</b> - удалить платеж за месяц\n")
 													.append("<b>удалить все</b> - удалить все данные об аренде")
 													.toString();
 										} else {
@@ -280,12 +280,13 @@ public class MessagesChecker implements Runnable {
 													"remove rent"));
 											answer = new StringBuilder()
 													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
-													.append("add month (/rent_add) - add month of rent\n\n")
-													.append("details (/getstatbymonth) - getting rent statistics by month\n\n")
-													.append("payments (/gethistory) - return total amount by months\n\n")
-													.append("rates (/getrates) - return all rates for rent\n\n")
-													.append("change rates (/changerates) - change rates for rent\n\n")
-													.append("remove payment (/delmonthstat) - remove statistics by month\n\n")
+													.append("add month (/rent_add) - add month of rent\n")
+													.append("details (/getstatbymonth) - getting rent statistics by month\n")
+													.append("payments (/gethistory) - return total amount by months\n")
+													.append("rates (/getrates) - return all rates for rent\n")
+													.append("change rates (/changerates) - change rates for rent\n")
+													.append("new primary (/setprimarycounters)- edit starting indications\n")
+													.append("remove payment (/delmonthstat) - remove statistics by month\n")
 													.append("remove rent (/purge) - remove statistics for all months of rent and primary values")
 													.toString();
 										}
@@ -297,10 +298,10 @@ public class MessagesChecker implements Runnable {
 											buttons.add(getButtonsList("начальные показания"));
 											answer = new StringBuilder()
 													.append("Вы можете использовать следующие команды:\n\n")
-													.append("<b>добавить месяц</b> - новый месяц аренды\n\n")
-													.append("<b>тарифы</b> - просмотр тарифов\n\n")
-													.append("<b>изменить тарифы</b>- изменить тарифы\n\n")
-													.append("<b>начальные показания</b> - задать начальные показания счетиков и стоимость аренды")
+													.append("<b>добавить месяц</b> - новый месяц аренды\n")
+													.append("<b>тарифы</b> - просмотр тарифов\n")
+													.append("<b>изменить тарифы</b>- изменить тарифы\n")
+													.append("<b>начальные показания</b> - изменить начальные показания счетиков и стоимость аренды")
 													.toString();
 										} else {
 											buttons.add(getButtonsList("add month"));
@@ -309,10 +310,10 @@ public class MessagesChecker implements Runnable {
 											buttons.add(getButtonsList("new primary"));
 											answer = new StringBuilder()
 													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
-													.append("add month (/rent_add) - add month of rent\n\n")
-													.append("rates (/getrates) - return all rates for rent\n\n")
-													.append("change rates (/changerates) - change rates for rent\n\n")
-													.append("new primary (/setprimarycounters)- set starting indications")
+													.append("add month (/rent_add) - add month of rent\n")
+													.append("rates (/getrates) - return all rates for rent\n")
+													.append("change rates (/changerates) - change rates for rent\n")
+													.append("new primary (/setprimarycounters)- edit starting indications")
 													.toString();
 										}
 									}
@@ -323,7 +324,7 @@ public class MessagesChecker implements Runnable {
 										buttons.add(getButtonsList("начальные показания"));
 
 										answer = new StringBuilder()
-												.append("Привет новый пользователь! Необходимо задать начальные показания для доступа ко всем функциям.\n\nИспользуйте команду:\n\n")
+												.append("Привет новый пользователь! Задайте начальные показания для доступа ко всем функциям.\n\nИспользуйте команду:\n\n")
 												.append("<b>начальные показания</b> - задать начальные показания счетиков и стоимость аренды")
 												.toString();
 									} else {
@@ -354,15 +355,15 @@ public class MessagesChecker implements Runnable {
 
 								answer = (isRus) ? new StringBuilder(
 										"Для добавления нового месяца Вы можете использовать следующие команды:\n\n")
-										.append("<b>месяц</b> - название месяца\n\n")
-										.append("<b>показания света</b> - задать показания счетчика света\n\n")
-										.append("<b>показания воды</b> - задать показания счетчиков воды, водоотвод расчитывается автоматически\n\n")
-										.append("<b>вычет</b> - другие расходы (вычитаюся из конечной суммы аренды)\n\n")
-										.append("<b>рассчитать</b> - конечная стоимость аренды\n\n")
-										.append("<b>инфо</b> - проверить введенную информацию\n\n")
+										.append("<b>месяц</b> - название месяца\n")
+										.append("<b>показания света</b> - задать показания счетчика света\n")
+										.append("<b>показания воды</b> - задать показания счетчиков воды, водоотвод расчитывается автоматически\n")
+										.append("<b>вычет</b> - другие расходы (вычитаюся из конечной суммы аренды)\n")
+										.append("<b>рассчитать</b> - конечная стоимость аренды\n")
+										.append("<b>инфо</b> - проверить введенную информацию\n")
 										.toString()
 										: new StringBuilder(
-												"I'm ready for set indications.\nYou can use next commands (Use buttons below):\n")
+												"I'm ready for set indications.\nYou can use next commands (Use buttons below):\n\n")
 												.append("name of month (/setmonth) - set the name of the rental month\n")
 												.append("light (/setlight) - set indications for light\n")
 												.append("water (/setwater) - set indications for water, outfall calculating automatically\n")
@@ -393,10 +394,10 @@ public class MessagesChecker implements Runnable {
 
 									answer = new StringBuilder()
 											.append("Вы можете использовать следующие команды:\n\n")
-											.append("<b>горячая вода</b> - изменить тариф на горячую воду\n\n")
-											.append("<b>холодная вода</b> - изменить тариф на холодную воду\n\n")
-											.append("<b>водоотвод</b> - изменить тариф на водоотвод\n\n")
-											.append("<b>электричество</b> - изменить тариф на электроэнергию\n\n")
+											.append("<b>горячая вода</b> - изменить тариф на горячую воду\n")
+											.append("<b>холодная вода</b> - изменить тариф на холодную воду\n")
+											.append("<b>водоотвод</b> - изменить тариф на водоотвод\n")
+											.append("<b>электричество</b> - изменить тариф на электроэнергию\n")
 											.append("<b>сумма аренды</b> - изменить сумму аренды")
 											.toString();
 								} else {
@@ -409,10 +410,10 @@ public class MessagesChecker implements Runnable {
 
 									answer = new StringBuilder()
 											.append("You can change next rates via follows commands (Use buttons below):\n\n")
-											.append("hot water (/changehwrateset) - set new hot water rate\n\n")
-											.append("cold water (/changecwrate) - set new cold water rate\n\n")
-											.append("outfall (/changeoutfallrate) - set new outfall rate\n\n")
-											.append("light rate (/changelightrate) - set new light rate\n\n")
+											.append("hot water (/changehwrateset) - set new hot water rate\n")
+											.append("cold water (/changecwrate) - set new cold water rate\n")
+											.append("outfall (/changeoutfallrate) - set new outfall rate\n")
+											.append("light rate (/changelightrate) - set new light rate\n")
 											.append("rent amount (/changera) - set new rent amount")
 											.toString();
 								}
@@ -759,8 +760,8 @@ public class MessagesChecker implements Runnable {
 								defaultPrimaryButtons(rh, isRus);
 								answer = (isRus) ? new StringBuilder()
 										.append("Вы можете использовать следующие команды:\n\n")
-										.append("<b>вода</b> - задать начальные показания счетчиков воды\n\n")
-										.append("<b>арендная плата</b> - задать сумму аренды\n\n")
+										.append("<b>вода</b> - задать начальные показания счетчиков воды\n")
+										.append("<b>арендная плата</b> - задать сумму аренды\n")
 										.append("<b>свет</b> - задать начальные показания счетчика света")
 										.toString()
 										: new StringBuilder()
@@ -1509,13 +1510,12 @@ public class MessagesChecker implements Runnable {
 
 					answer = (isRus) ? new StringBuilder("У вас ")
 							.append(countCounters).append(" счетчика")
-							.append(". Задайте значения для них").toString()
-							: new StringBuilder("Ok. You have ")
-									.append(countCounters)
-									.append(" counter of ")
-									.append(pwh.getTypeOfWater())
-									.append(" water. Set primary indications for it")
-									.toString();
+							.append(". Задайте начальные значения для них")
+							.toString() : new StringBuilder("Ok. You have ")
+							.append(countCounters).append(" counter of ")
+							.append(pwh.getTypeOfWater())
+							.append(" water. Set primary indications for it")
+							.toString();
 					pwh.setWaterSet(true);
 
 				} else {
@@ -1629,7 +1629,7 @@ public class MessagesChecker implements Runnable {
 								pwh.getHotWater().put(counter,
 										new WaterHolder(typeOfWater));
 								answer = (isRus) ? new StringBuilder(
-										"Задайте значение для счетчика номер ")
+										"Задайте начальное значение для счетчика номер ")
 										.append(counter)
 										.append(".\n\nИспользуйте формат: значение пседоним (например, 100 ванная)")
 										.toString()
@@ -1840,7 +1840,7 @@ public class MessagesChecker implements Runnable {
 								pwh.getColdWater().put(counter,
 										new WaterHolder(typeOfWater));
 								answer = (isRus) ? new StringBuilder(
-										"Задайте значение для счетчика номер ")
+										"Задайте начальное значение для счетчика номер ")
 										.append(counter)
 										.append(".\n\nИспользуйте формат: значение пседоним (например, 100 ванная")
 										.toString()
@@ -2217,7 +2217,7 @@ public class MessagesChecker implements Runnable {
 										.toString();
 							} else {
 								hideKeybord(rh);
-								answer = (isRus) ? "У вас однотарифный счетчик. Задайте значение"
+								answer = (isRus) ? "Задайте начальное значение"
 										: sb.append("Please set value for it")
 												.toString();
 							}
