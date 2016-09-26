@@ -1,12 +1,18 @@
 package ru.max.bot;
 
+/**
+ * Contains information about response message
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
 public class ResponseHolder {
 
 	private String responseMessage;
 	private boolean needReplyMarkup;
 	private String replyMarkup;
 	private String chatId;
-	
+
 	public ResponseHolder() {
 	}
 

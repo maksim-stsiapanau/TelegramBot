@@ -205,7 +205,6 @@ public class MessagesChecker implements Runnable {
 								&& Integer.valueOf(id) > 0) {
 
 							// check russian language
-
 							if (isMapper) {
 								if (isRus) {
 									text = commandMapperRus.get(text);
@@ -280,14 +279,14 @@ public class MessagesChecker implements Runnable {
 													"remove payment",
 													"remove rent"));
 											answer = new StringBuilder()
-													.append("You can control your rent by sending these commands (Use buttons below):\n")
-													.append("add month (/rent_add) - add month of rent\n")
-													.append("details (/getstatbymonth) - getting rent statistics by month\n")
-													.append("payments (/gethistory) - return total amount by months\n")
-													.append("rates (/getrates) - return all rates for rent\n")
-													.append("change rates (/changerates) - change rates for rent\n")
-													.append("remove payment (/delmonthstat) - remove statistics by month\n")
-													.append("remove rent (/purge) - remove statistics for all months of rent and primary values\n")
+													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
+													.append("add month (/rent_add) - add month of rent\n\n")
+													.append("details (/getstatbymonth) - getting rent statistics by month\n\n")
+													.append("payments (/gethistory) - return total amount by months\n\n")
+													.append("rates (/getrates) - return all rates for rent\n\n")
+													.append("change rates (/changerates) - change rates for rent\n\n")
+													.append("remove payment (/delmonthstat) - remove statistics by month\n\n")
+													.append("remove rent (/purge) - remove statistics for all months of rent and primary values")
 													.toString();
 										}
 									} else {
@@ -309,10 +308,10 @@ public class MessagesChecker implements Runnable {
 													"change rates"));
 											buttons.add(getButtonsList("new primary"));
 											answer = new StringBuilder()
-													.append("You can control your rent by sending these commands (Use buttons below):\n")
-													.append("add month (/rent_add) - add month of rent\n")
-													.append("rates (/getrates) - return all rates for rent\n")
-													.append("change rates (/changerates) - change rates for rent\n")
+													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
+													.append("add month (/rent_add) - add month of rent\n\n")
+													.append("rates (/getrates) - return all rates for rent\n\n")
+													.append("change rates (/changerates) - change rates for rent\n\n")
 													.append("new primary (/setprimarycounters)- set starting indications")
 													.toString();
 										}
@@ -406,15 +405,15 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList("outfall",
 											"light rate"));
 									buttons.add(getButtonsList("rent amount",
-											"back to rent menu"));
+											"main menu"));
 
 									answer = new StringBuilder()
 											.append("You can change next rates via follows commands (Use buttons below):\n\n")
-											.append("hot water (/changehotwaterrate ) - set new hot water rate\n")
-											.append("cold water (/changecoldwaterrate) - set new cold water rate\n")
-											.append("outfall (/changeoutfallrate) - set new outfall rate\n")
-											.append("light rate (/changelightrate)- set new light rate\n")
-											.append("rent amount (/changerentamount) - set new rent amount")
+											.append("hot water (/changehwrateset) - set new hot water rate\n\n")
+											.append("cold water (/changecwrate) - set new cold water rate\n\n")
+											.append("outfall (/changeoutfallrate) - set new outfall rate\n\n")
+											.append("light rate (/changelightrate) - set new light rate\n\n")
+											.append("rent amount (/changera) - set new rent amount")
 											.toString();
 								}
 
@@ -426,13 +425,13 @@ public class MessagesChecker implements Runnable {
 
 							}
 								break;
-							case "/changehotwaterrate": {
+							case "/changehwrate": {
 								hideKeybord(rh);
 								answer = (isRus) ? "Для изменения тарифа горячей воды отправьте новое значение"
 										: "For change hot water rate send simple message with new hot water rate";
 							}
 								break;
-							case "/changecoldwaterrate": {
+							case "/changecwrate": {
 								hideKeybord(rh);
 								answer = (isRus) ? "Для изменения тарифа холодной воды отправьте новое значение"
 										: "For change cold water rate send simple message with new cold water rate";
@@ -496,7 +495,7 @@ public class MessagesChecker implements Runnable {
 										: "For change outfall rate send simple message with new outfall rate";
 							}
 								break;
-							case "/changerentamount": {
+							case "/changera": {
 								hideKeybord(rh);
 								answer = (isRus) ? "Для изменения суммы аренды отправьте новое значение"
 										: "For change rent amount send simple message with new rent amount";
@@ -518,7 +517,7 @@ public class MessagesChecker implements Runnable {
 
 								if (buttons.size() > 0) {
 									buttons.add(getButtonsList((isRus) ? "главное меню"
-											: "back to rent menu"));
+											: "main menu"));
 									rh.setNeedReplyMarkup(true);
 									rh.setReplyMarkup(objectMapper
 											.writeValueAsString(getButtons(buttons)));
@@ -548,7 +547,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList("главное меню"));
 								} else {
 									buttons.add(getButtonsList("yes"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(objectMapper
@@ -583,7 +582,7 @@ public class MessagesChecker implements Runnable {
 								if (buttons.size() > 0) {
 
 									buttons.add(getButtonsList((isRus) ? "главное меню"
-											: "back to rent menu"));
+											: "main menu"));
 
 									rh.setNeedReplyMarkup(true);
 									rh.setReplyMarkup(objectMapper
@@ -616,7 +615,8 @@ public class MessagesChecker implements Runnable {
 									answer = (isRus) ? "Вы оплачиваете водоотвод?"
 											: "Ok. Do you need include outfall to final amount?";
 								} else {
-									answer = "Показания не заданы. Для расчета необходимо задать название месяца, показания воды и света!";
+									answer = (isRus) ? "Показания не заданы. Для расчета необходимо задать название месяца, показания воды и света!"
+											: "Required parameters not set. For calculating rent amount you must set month name, indications of water and light";
 								}
 							}
 								break;
@@ -657,7 +657,7 @@ public class MessagesChecker implements Runnable {
 											});
 
 									buttons.add(getButtonsList((isRus) ? "главное меню"
-											: "back to rent menu"));
+											: "main menu"));
 
 									cacheButtons.put(id, buttons);
 
@@ -729,7 +729,7 @@ public class MessagesChecker implements Runnable {
 									}
 								}
 								buttons.add(getButtonsList((isRus) ? "главное меню"
-										: "back to rent menu"));
+										: "main menu"));
 
 								rentHolder.get().setWaterButtons(buttons);
 
@@ -771,7 +771,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList("главное меню"));
 								} else {
 									buttons.add(getButtonsList("hot", "cold"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -794,7 +794,7 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								buttons.add(getButtonsList("1", "2", "3"));
 								buttons.add(getButtonsList((isRus) ? "главное меню"
-										: "back to rent menu"));
+										: "main menu"));
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(objectMapper
@@ -857,7 +857,7 @@ public class MessagesChecker implements Runnable {
 				List<List<String>> buttons = new ArrayList<>();
 				if (DataBaseHelper.getInstance().purgeAll(idChat)) {
 					buttons.add(getButtonsList((isRus) ? "главное меню"
-							: "back to rent menu"));
+							: "main menu"));
 					rh.setNeedReplyMarkup(true);
 					try {
 						rh.setReplyMarkup(objectMapper
@@ -877,7 +877,7 @@ public class MessagesChecker implements Runnable {
 			}
 		}
 			break;
-		case "/changehotwaterrate": {
+		case "/changehwrate": {
 			Double value = null;
 			try {
 				value = Double.parseDouble(text);
@@ -912,7 +912,7 @@ public class MessagesChecker implements Runnable {
 		}
 
 			break;
-		case "/changecoldwaterrate": {
+		case "/changecwrate": {
 			Double value = null;
 			try {
 				value = Double.parseDouble(text);
@@ -1065,7 +1065,7 @@ public class MessagesChecker implements Runnable {
 			}
 		}
 			break;
-		case "/changerentamount": {
+		case "/changera": {
 			Double value = null;
 			try {
 				value = Double.parseDouble(text);
@@ -1397,7 +1397,7 @@ public class MessagesChecker implements Runnable {
 					buttons.add(getButtonsList("главное меню"));
 				} else {
 					buttons.add(getButtonsList("hot", "cold"));
-					buttons.add(getButtonsList("back to rent menu"));
+					buttons.add(getButtonsList("main menu"));
 				}
 
 				rh.setNeedReplyMarkup(true);
@@ -1485,7 +1485,7 @@ public class MessagesChecker implements Runnable {
 						buttons.add(getButtonsList("главное меню"));
 					} else {
 						buttons.add(getButtonsList("back"));
-						buttons.add(getButtonsList("back to rent menu"));
+						buttons.add(getButtonsList("main menu"));
 					}
 
 					rh.setNeedReplyMarkup(true);
@@ -1650,7 +1650,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList(
 											getEmoji("E29C85") + " " + "hot",
 											"cold"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -1753,7 +1753,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList(
 											getEmoji("E29C85") + " " + "hot",
 											"cold"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -1859,7 +1859,7 @@ public class MessagesChecker implements Runnable {
 								} else {
 									buttons.add(getButtonsList("hot",
 											getEmoji("E29C85") + " " + "cold"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -1957,7 +1957,7 @@ public class MessagesChecker implements Runnable {
 								} else {
 									buttons.add(getButtonsList("hot",
 											getEmoji("E29C85") + " " + "cold"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								rh.setNeedReplyMarkup(true);
@@ -2002,7 +2002,7 @@ public class MessagesChecker implements Runnable {
 
 						buttons.add(getButtonsList(names.toArray(temp)));
 						buttons.add(getButtonsList((isRus) ? "главное меню"
-								: "back to rent menu"));
+								: "main menu"));
 
 						cacheButtons.put(idChat, buttons);
 
@@ -2149,7 +2149,7 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								buttons.add(getButtonsList(hot, cold));
 								buttons.add(getButtonsList((isRus) ? "главное меню"
-										: "back to rent menu"));
+										: "main menu"));
 
 								rh.setNeedReplyMarkup(true);
 								try {
@@ -2191,7 +2191,7 @@ public class MessagesChecker implements Runnable {
 									buttons.add(getButtonsList("главное меню"));
 								} else {
 									buttons.add(getButtonsList("back"));
-									buttons.add(getButtonsList("back to rent menu"));
+									buttons.add(getButtonsList("main menu"));
 								}
 
 								cacheButtons.put(idChat, buttons);
@@ -2280,7 +2280,7 @@ public class MessagesChecker implements Runnable {
 										.toLowerCase(),
 								PrimaryLightHolder.Periods.NIGHT.name()
 										.toLowerCase()));
-						buttons.add(getButtonsList("back to rent menu"));
+						buttons.add(getButtonsList("main menu"));
 					}
 
 					cacheButtons.put(idChat, buttons);
@@ -2323,7 +2323,7 @@ public class MessagesChecker implements Runnable {
 					String[] names = {};
 					buttons.add(getButtonsList(periodsName.toArray(names)));
 					buttons.add(getButtonsList((isRus) ? "главное меню"
-							: "back to rent menu"));
+							: "main menu"));
 
 					cacheButtons.put(idChat, buttons);
 
@@ -2468,7 +2468,7 @@ public class MessagesChecker implements Runnable {
 							}
 
 							buttons.add(getButtonsList((isRus) ? "главное меню"
-									: "back to rent menu"));
+									: "main menu"));
 
 							try {
 								rh.setNeedReplyMarkup(true);
@@ -2621,8 +2621,7 @@ public class MessagesChecker implements Runnable {
 	private void setDefaultRentButtons(ResponseHolder rh, boolean isRus) {
 
 		List<List<String>> buttons = new ArrayList<>();
-		buttons.add(getButtonsList((isRus) ? "главное меню"
-				: "back to rent menu"));
+		buttons.add(getButtonsList((isRus) ? "главное меню" : "main menu"));
 
 		try {
 			rh.setNeedReplyMarkup(true);
@@ -2670,8 +2669,7 @@ public class MessagesChecker implements Runnable {
 
 		buttons.add(getButtonsList(water, rentAmount, light));
 
-		buttons.add(getButtonsList((isRus) ? "главное меню"
-				: "back to rent menu"));
+		buttons.add(getButtonsList((isRus) ? "главное меню" : "main menu"));
 
 		try {
 			rh.setNeedReplyMarkup(true);
@@ -2710,7 +2708,7 @@ public class MessagesChecker implements Runnable {
 					(null == rent.getTakeout()) ? "takeout"
 							: getEmoji("E29C85") + " takeout"));
 			buttons.add(getButtonsList("current statistic", "calc"));
-			buttons.add(getButtonsList("back to rent menu"));
+			buttons.add(getButtonsList("main menu"));
 		}
 
 		rh.setNeedReplyMarkup(true);

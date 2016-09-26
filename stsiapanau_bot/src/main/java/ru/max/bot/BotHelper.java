@@ -46,7 +46,7 @@ public class BotHelper {
 		commandMapper.put("set water", "/setprimarywater");
 		commandMapper.put("set rent amount", "/setprimaryrentamount");
 		commandMapper.put("rent", "/rent");
-		commandMapper.put("back to rent menu", "/rent");
+		commandMapper.put("main menu", "/rent");
 		commandMapper.put("calc", "/calc");
 		commandMapper.put("home", "/start");
 		commandMapper.put("payments", "/gethistory");
@@ -62,11 +62,11 @@ public class BotHelper {
 		commandMapper.put("remove rent", "/purge");
 		commandMapper.put("remove payment", "/delmonthstat");
 		commandMapper.put("current statistic", "/getstat");
-		commandMapper.put("hot water", "/changehotwaterrate");
-		commandMapper.put("cold water", "/changecoldwaterrate");
+		commandMapper.put("hot water", "/changehwrate");
+		commandMapper.put("cold water", "/changecwrate");
 		commandMapper.put("outfall", "/changeoutfallrate");
 		commandMapper.put("light rate", "/changelightrate");
-		commandMapper.put("rent amount", "/changerentamount");
+		commandMapper.put("rent amount", "/changera");
 
 		// russian language
 		commandMapperRus.put("свет", "/setprimarylight");

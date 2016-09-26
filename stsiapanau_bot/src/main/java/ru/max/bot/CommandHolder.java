@@ -1,5 +1,11 @@
 package ru.max.bot;
 
+/**
+ * Hold command and russian language flag
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
 public class CommandHolder {
 
 	private final String command;
