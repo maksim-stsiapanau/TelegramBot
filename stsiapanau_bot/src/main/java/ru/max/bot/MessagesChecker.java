@@ -629,10 +629,21 @@ public class MessagesChecker implements Runnable {
 							case "/setmonth": {
 								List<List<String>> buttons = new ArrayList<>();
 								DateTime date = new DateTime();
-								buttons.add(getButtonsList(date.toString(
-										"MMMM", (isRus) ? new Locale("ru")
-												: Locale.US)
-										+ " " + date.getYear()));
+
+								String month = date.toString("MMMM",
+										(isRus) ? new Locale("ru", "RU")
+												: Locale.US);
+
+								if (isRus) {
+									if (month.charAt(month.length() - 1) == 'я') {
+										month = month.substring(0,
+												month.length() - 1)
+												+ "ь";
+									}
+								}
+
+								buttons.add(getButtonsList(month + " "
+										+ date.getYear()));
 
 								rh.setNeedReplyMarkup(true);
 								rh.setReplyMarkup(objectMapper
