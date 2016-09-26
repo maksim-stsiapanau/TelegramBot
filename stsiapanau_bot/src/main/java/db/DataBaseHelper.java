@@ -135,12 +135,12 @@ public class DataBaseHelper {
 							(String) doc.get("water"), PrimaryWaterHolder.class);
 
 					sb.append(
-							(isRus) ? "Горячая вода: "
-									: "Hot water: ")
+							(isRus) ? "Горячая: "
+									: "Hot: ")
 							.append(pwh.getHotWaterRate())
 							.append((isRus) ? " руб" : " rub")
-							.append((isRus) ? "\nХолодная вода: "
-									: "\nCold water: ")
+							.append((isRus) ? "\nХолодная: "
+									: "\nCold: ")
 							.append(pwh.getColdWaterRate())
 							.append(" rub.")
 							.append((isRus) ? "\nВодоотвод: "
