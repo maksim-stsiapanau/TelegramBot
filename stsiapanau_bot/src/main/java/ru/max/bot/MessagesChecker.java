@@ -1404,11 +1404,23 @@ public class MessagesChecker implements Runnable {
 			if (text.equalsIgnoreCase((isRus) ? "назад" : "back")) {
 				List<List<String>> buttons = new ArrayList<>();
 
+				boolean isSetHot = (pwh.getHotWater() != null && pwh
+						.getHotWater().size() == pwh.getCountHotWaterCounter()) ? true
+						: false;
+				boolean isSetCold = (pwh.getColdWater() != null && pwh
+						.getColdWater().size() == pwh
+						.getCountColdWaterCounter()) ? true : false;
+
 				if (isRus) {
-					buttons.add(getButtonsList("горячая", "холодная"));
+					buttons.add(getButtonsList((isSetHot) ? getEmoji("E29C85")
+							+ " горячая" : "горячая",
+							(isSetCold) ? getEmoji("E29C85") + " холодная"
+									: "холодная"));
 					buttons.add(getButtonsList("главное меню"));
 				} else {
-					buttons.add(getButtonsList("hot", "cold"));
+					buttons.add(getButtonsList((isSetHot) ? getEmoji("E29C85")
+							+ " hot" : "hot", (isSetCold) ? getEmoji("E29C85")
+							+ " cold" : "cold"));
 					buttons.add(getButtonsList("main menu"));
 				}
 
@@ -1432,8 +1444,13 @@ public class MessagesChecker implements Runnable {
 			if (null == typeOfWater) {
 
 				// check back
-				if (pwh.getCountColdWaterCounter() != null
-						&& pwh.getCountHotWaterCounter() != null) {
+				if ((pwh.getCountColdWaterCounter() != null && pwh
+						.getCountHotWaterCounter() != null)
+						|| (text.equalsIgnoreCase((isRus) ? "горячая" : "hot") && (pwh
+								.getCountHotWaterCounter() != null))
+						|| (text.equalsIgnoreCase((isRus) ? "холодная" : "cold") && (pwh
+								.getCountColdWaterCounter() != null))) {
+
 					List<List<String>> buttons = new ArrayList<>();
 					Map<Integer, WaterHolder> waterHolder;
 					logger.trace("Back button was tap");
@@ -1463,59 +1480,72 @@ public class MessagesChecker implements Runnable {
 					}
 					}
 
-					if (null != waterHolder) {
-						int addCount = 0;
-						for (Entry<Integer, WaterHolder> entry : waterHolder
-								.entrySet()) {
+					if (countCounters > 1) {
+						if (null != waterHolder) {
+							int addCount = 0;
+							for (Entry<Integer, WaterHolder> entry : waterHolder
+									.entrySet()) {
 
-							if (entry.getValue().getAlias() != null) {
-								buttons.add(getButtonsList(getEmoji("E29C85")
-										+ " " + entry.getValue().getAlias()));
-							} else {
-								buttons.add(getButtonsList(entry.getKey()
-										.toString().toLowerCase()));
+								if (entry.getValue().getAlias() != null) {
+									buttons.add(getButtonsList(getEmoji("E29C85")
+											+ " " + entry.getValue().getAlias()));
+								} else {
+									buttons.add(getButtonsList(entry.getKey()
+											.toString().toLowerCase()));
+								}
+								++addCount;
 							}
-							++addCount;
-						}
 
-						if (addCount < countCounters) {
-							for (int i = addCount; i < countCounters; i++) {
+							if (addCount < countCounters) {
+								for (int i = addCount; i < countCounters; i++) {
+									buttons.add(getButtonsList(String
+											.valueOf(i + 1)));
+								}
+							}
+
+						} else {
+							for (int i = 0; i < countCounters; i++) {
 								buttons.add(getButtonsList(String
 										.valueOf(i + 1)));
 							}
+
 						}
 
-					} else {
-						for (int i = 0; i < countCounters; i++) {
-							buttons.add(getButtonsList(String.valueOf(i + 1)));
+						if (isRus) {
+							buttons.add(getButtonsList("назад"));
+							buttons.add(getButtonsList("главное меню"));
+						} else {
+							buttons.add(getButtonsList("back"));
+							buttons.add(getButtonsList("main menu"));
+						}
+						
+						cacheButtons.put(idChat, buttons);
+
+						rh.setNeedReplyMarkup(true);
+						try {
+							rh.setReplyMarkup(objectMapper
+									.writeValueAsString(getButtons(buttons)));
+						} catch (JsonProcessingException e) {
+							logger.error(e.getMessage(), e);
 						}
 
-					}
+						answer = (isRus) ? new StringBuilder("У вас ")
+								.append(countCounters).append(" счетчика")
+								.append(". Задайте начальные значения для них")
+								.toString()
+								: new StringBuilder("Ok. You have ")
+										.append(countCounters)
+										.append(" counter of ")
+										.append(pwh.getTypeOfWater())
+										.append(" water. Set primary indications for it")
+										.toString();
 
-					if (isRus) {
-						buttons.add(getButtonsList("назад"));
-						buttons.add(getButtonsList("главное меню"));
 					} else {
-						buttons.add(getButtonsList("back"));
-						buttons.add(getButtonsList("main menu"));
+						hideKeybord(rh);
+						pwh.setWaitValue(true);
+						answer = (isRus) ? "Задайте начальное значение"
+								: "Set primary indication";
 					}
-
-					rh.setNeedReplyMarkup(true);
-					try {
-						rh.setReplyMarkup(objectMapper
-								.writeValueAsString(getButtons(buttons)));
-					} catch (JsonProcessingException e) {
-						logger.error(e.getMessage(), e);
-					}
-
-					answer = (isRus) ? new StringBuilder("У вас ")
-							.append(countCounters).append(" счетчика")
-							.append(". Задайте начальные значения для них")
-							.toString() : new StringBuilder("Ok. You have ")
-							.append(countCounters).append(" counter of ")
-							.append(pwh.getTypeOfWater())
-							.append(" water. Set primary indications for it")
-							.toString();
 					pwh.setWaterSet(true);
 
 				} else {
@@ -1575,7 +1605,7 @@ public class MessagesChecker implements Runnable {
 					case "hot":
 					case "горячая": {
 						if ((null == pwh.getHotWater() || pwh.getHotWater()
-								.size() < pwh.getCountHotWaterCounter())
+								.size() <= pwh.getCountHotWaterCounter())
 								&& !pwh.isWaitValue()) {
 
 							Integer counter = null;
@@ -1626,6 +1656,15 @@ public class MessagesChecker implements Runnable {
 							pwh.setHotWater();
 
 							if (pwh.getCountHotWaterCounter() > 1) {
+								int waitCounter = pwh.getHotWater().size() + 1;
+								if (counter != waitCounter
+										&& !pwh.getHotWater().containsKey(
+												counter)) {
+									return (isRus) ? "Задайте сначала счетчик номер "
+											+ waitCounter
+											: "Set before counter number "
+													+ waitCounter;
+								}
 								pwh.getHotWater().put(counter,
 										new WaterHolder(typeOfWater));
 								answer = (isRus) ? new StringBuilder(
@@ -1678,8 +1717,20 @@ public class MessagesChecker implements Runnable {
 							}
 
 						} else {
-							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
-									.getHotWater()).lastKey();
+							Integer lastKey = 1;
+
+							if (pwh.getHotWater().size() > 1) {
+								for (Entry<Integer, WaterHolder> e : pwh
+										.getHotWater().entrySet()) {
+									if (e.getValue().getPrimaryIndication() == null) {
+										lastKey = e.getKey();
+									}
+								}
+							}
+
+							// Integer lastKey = ((NavigableMap<Integer,
+							// WaterHolder>) pwh
+							// .getHotWater()).lastKey();
 
 							String existAlias = pwh.getHotWater().get(lastKey)
 									.getAlias();
@@ -1702,11 +1753,27 @@ public class MessagesChecker implements Runnable {
 
 								pwh.getHotWater().get(lastKey)
 										.setPrimaryIndication(value);
-								pwh.getHotWater().get(lastKey)
-										.setAlias(temp[1]);
+								// check exist alias
+								String alias = temp[1];
+
+								if (lastKey > 1) {
+									for (Entry<Integer, WaterHolder> e : pwh
+											.getHotWater().entrySet()) {
+										if (e.getKey() < lastKey) {
+											if (e.getValue().getAlias()
+													.equalsIgnoreCase(alias)) {
+												return (isRus) ? "Псевдоним существует! Задайте другой"
+														: "Alias exist! Set another";
+											}
+										}
+									}
+								}
+
+								pwh.getHotWater().get(lastKey).setAlias(alias);
 
 								ListIterator<String> iter = cacheButtons
-										.get(idChat).get(0).listIterator();
+										.get(idChat).get(lastKey - 1)
+										.listIterator();
 
 								while (iter.hasNext()) {
 									String e = iter.next();
@@ -1750,7 +1817,8 @@ public class MessagesChecker implements Runnable {
 
 							pwh.setWaitValue(false);
 
-							if (lastKey == pwh.getCountHotWaterCounter()) {
+							if (pwh.getHotWater().size() == pwh
+									.getCountHotWaterCounter()) {
 								pwh.setWaterSet(false);
 								pwh.setTypeOfWater(null);
 
@@ -1787,7 +1855,7 @@ public class MessagesChecker implements Runnable {
 					case "cold":
 					case "холодная": {
 						if ((null == pwh.getColdWater() || pwh.getColdWater()
-								.size() < pwh.getCountColdWaterCounter())
+								.size() <= pwh.getCountColdWaterCounter())
 								&& !pwh.isWaitValue()) {
 
 							Integer counter = null;
@@ -1837,6 +1905,15 @@ public class MessagesChecker implements Runnable {
 							pwh.setColdWater();
 
 							if (pwh.getCountColdWaterCounter() > 1) {
+								int waitCounter = pwh.getColdWater().size() + 1;
+								if (counter != waitCounter
+										&& !pwh.getColdWater().containsKey(
+												counter)) {
+									return (isRus) ? "Задайте сначала счетчик номер "
+											+ waitCounter
+											: "Set before counter number "
+													+ (waitCounter);
+								}
 								pwh.getColdWater().put(counter,
 										new WaterHolder(typeOfWater));
 								answer = (isRus) ? new StringBuilder(
@@ -1885,8 +1962,19 @@ public class MessagesChecker implements Runnable {
 										: "Indications for cold water set successfully";
 							}
 						} else {
-							Integer lastKey = ((NavigableMap<Integer, WaterHolder>) pwh
-									.getColdWater()).lastKey();
+							Integer lastKey = 1;
+
+							if (pwh.getColdWater().size() > 1) {
+								for (Entry<Integer, WaterHolder> e : pwh
+										.getColdWater().entrySet()) {
+									if (e.getValue().getPrimaryIndication() == null) {
+										lastKey = e.getKey();
+									}
+								}
+							}
+							// Integer lastKey = ((NavigableMap<Integer,
+							// WaterHolder>) pwh
+							// .getColdWater()).lastKey();
 
 							String existAlias = pwh.getColdWater().get(lastKey)
 									.getAlias();
@@ -1908,11 +1996,27 @@ public class MessagesChecker implements Runnable {
 
 								pwh.getColdWater().get(lastKey)
 										.setPrimaryIndication(value);
-								pwh.getColdWater().get(lastKey)
-										.setAlias(temp[1]);
+								// check exist alias
+								String alias = temp[1];
+
+								if (lastKey > 1) {
+									for (Entry<Integer, WaterHolder> e : pwh
+											.getColdWater().entrySet()) {
+										if (e.getKey() < lastKey) {
+											if (e.getValue().getAlias()
+													.equalsIgnoreCase(alias)) {
+												return (isRus) ? "Псевдоним существует! Задайте другой"
+														: "Alias exist! Set another";
+											}
+										}
+									}
+								}
+
+								pwh.getColdWater().get(lastKey).setAlias(alias);
 
 								ListIterator<String> iter = cacheButtons
-										.get(idChat).get(0).listIterator();
+										.get(idChat).get(lastKey - 1)
+										.listIterator();
 
 								while (iter.hasNext()) {
 									String e = iter.next();
@@ -1955,7 +2059,8 @@ public class MessagesChecker implements Runnable {
 
 							pwh.setWaitValue(false);
 
-							if (lastKey == pwh.getCountColdWaterCounter()) {
+							if (pwh.getColdWater().size() == pwh
+									.getCountColdWaterCounter()) {
 								pwh.setWaterSet(false);
 								pwh.setTypeOfWater(null);
 
