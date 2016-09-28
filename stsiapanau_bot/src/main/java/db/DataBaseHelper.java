@@ -113,7 +113,7 @@ public class DataBaseHelper {
 						(isRus) ? "<b>Сумма аренды:</b> "
 								: "<b>Rent amount:</b> ")
 						.append(doc.get("rent_amount"))
-						.append(" rub.")
+						.append((isRus) ? " руб" : " rub")
 						.append((isRus) ? "\n\n<b>Электричество</b>"
 								: "\n\n<b>Light</b>");
 
@@ -138,7 +138,8 @@ public class DataBaseHelper {
 							.append(pwh.getHotWaterRate())
 							.append((isRus) ? " руб" : " rub")
 							.append((isRus) ? "\nХолодная: " : "\nCold: ")
-							.append(pwh.getColdWaterRate()).append(" rub.")
+							.append(pwh.getColdWaterRate())
+							.append((isRus) ? " руб" : " rub")
 							.append((isRus) ? "\nВодоотвод: " : "\nOutfall: ")
 							.append(pwh.getOutfallRate())
 							.append((isRus) ? " руб" : " rub");
@@ -629,17 +630,17 @@ public class DataBaseHelper {
 		boolean primarySet = false;
 
 		try {
-			Optional<Document> rates = Optional.ofNullable(this.db
+			Optional<Document> primaries = Optional.ofNullable(this.db
 					.getCollection("rent_const")
 					.find(Filters.eq("id_chat", idChat)).first());
-			if (rates.isPresent()) {
+			if (primaries.isPresent()) {
 				this.db.getCollection("rent_const").updateOne(
 						this.db.getCollection("rent_const")
 								.find(Filters.eq("id_chat", idChat)).first(),
 						new Document("$set", new Document(field, obj)));
 
-				primarySet = (rates.get().get("light") != null
-						&& rates.get().get("rent_amount") != null && rates
+				primarySet = (primaries.get().get("light") != null
+						&& primaries.get().get("rent_amount") != null && primaries
 						.get().get("water") != null) ? true : false;
 
 			} else {
@@ -650,17 +651,21 @@ public class DataBaseHelper {
 			}
 
 			if (primarySet) {
+				primaries = Optional.ofNullable(this.db
+						.getCollection("rent_const")
+						.find(Filters.eq("id_chat", idChat)).first());
+
 				LastIndicationsHolder lastIndications = new LastIndicationsHolder();
 				try {
 					lastIndications.setLight(objectMapper.readValue(
-							(String) rates.get().get("light"),
+							(String) primaries.get().get("light"),
 							PrimaryLightHolder.class).getIndications());
 
 					lastIndications.setColdWater(objectMapper.readValue(
-							(String) rates.get().get("water"),
+							(String) primaries.get().get("water"),
 							PrimaryWaterHolder.class).getColdWater());
 					lastIndications.setHotWater(objectMapper.readValue(
-							(String) rates.get().get("water"),
+							(String) primaries.get().get("water"),
 							PrimaryWaterHolder.class).getHotWater());
 
 					this.db.getCollection("rent_const")

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.mongodb.client.model.Filters;
 
 import db.DataBaseHelper;
-import db.MonthSaver;
 
 public class RentHolder {
 
@@ -186,9 +185,16 @@ public class RentHolder {
 			totalObj.setLastIndications(lastInds);
 
 			// save month statistic to database
-			ExecutorService exs = Executors.newSingleThreadExecutor();
-			exs.execute(new MonthSaver(totalObj));
-			exs.shutdown();
+			ExecutorService es = Executors.newSingleThreadExecutor();
+			es.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					DataBaseHelper.getInstance().insertMonthStat(totalObj);
+
+				}
+			});
+			es.shutdown();
 
 		}
 

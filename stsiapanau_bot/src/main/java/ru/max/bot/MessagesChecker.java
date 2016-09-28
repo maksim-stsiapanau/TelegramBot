@@ -35,7 +35,6 @@ import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.joda.time.DateTime;
 
-import rent.LastIndicationsHolder;
 import rent.PrimaryLightHolder;
 import rent.PrimaryLightHolder.Periods;
 import rent.PrimaryLightHolder.PeriodsRus;
@@ -157,6 +156,7 @@ public class MessagesChecker implements Runnable {
 			for (Result res : result) {
 				ResponseHolder rh = new ResponseHolder();
 
+				boolean isRus = false;
 				try {
 					updateId = res.getUpdateId();
 					Optional<Message> messageObj = Optional.ofNullable(res
@@ -179,6 +179,9 @@ public class MessagesChecker implements Runnable {
 
 						String text = messageObj.get().getText();
 
+						if (null == text) {
+							text = "";
+						}
 						if (text.contains(getEmoji("E29C85"))) {
 							text = text.replace(getEmoji("E29C85"), "");
 						}
@@ -191,18 +194,17 @@ public class MessagesChecker implements Runnable {
 						}
 
 						boolean isMapper = false;
-						boolean isRus = commandMapperRus.containsKey(text);
+						isRus = commandMapperRus.containsKey(text);
 
 						if (commandMapper.containsKey(text)
 								|| commandMapperRus.containsKey(text)) {
 							isMapper = true;
 						}
 
-						String answer = (isRus) ? "Я не могу ответить на этот вопрос("
-								: "I can't answer at this question(";
+						String answer = (isRus) ? "Я не могу ответить на этот вопрос"
+								: "I can't answer at this question";
 
-						if ((typeCommand.equalsIgnoreCase("bot_command") || isMapper)
-								&& Integer.valueOf(id) > 0) {
+						if ((typeCommand.equalsIgnoreCase("bot_command") || isMapper)) {
 
 							// check russian language
 							if (isMapper) {
@@ -227,8 +229,8 @@ public class MessagesChecker implements Runnable {
 								buttons.add(getButtonsList("rent", "аренда"));
 
 								answer = new StringBuilder()
-										.append("Hi. I am bot. I can process next operations:\n")
-										.append("<b>rent</b> (/rent) - calculating rent per month\n\n")
+										.append("For english tap rent:\n")
+										.append("<b>rent</b> (/rent) - calculating rent\n\n")
 										.append("Для продолжения на русском языке используйте команду:\n\n")
 										.append("<b>аренда</b> - расчет арендной платы за месяц\n")
 										.toString();
@@ -239,111 +241,7 @@ public class MessagesChecker implements Runnable {
 							}
 								break;
 							case "/rent": {
-								cacheButtons.remove(id);
-								List<List<String>> buttons = new ArrayList<>();
-
-								if (DataBaseHelper.getInstance().existRentUser(
-										id)) {
-
-									if (DataBaseHelper.getInstance()
-											.existPayment(id)) {
-										if (isRus) {
-											buttons.add(getButtonsList("добавить месяц"));
-											buttons.add(getButtonsList(
-													"статистика", "платежи"));
-											buttons.add(getButtonsList(
-													"тарифы", "изменить тарифы"));
-											buttons.add(getButtonsList("начальные показания"));
-											buttons.add(getButtonsList(
-													"удалить платеж",
-													"удалить все"));
-											answer = new StringBuilder()
-													.append("Вы можете использовать следующий команды:\n\n")
-													.append("<b>добавить месяц</b> - новый месяц аренды\n")
-													.append("<b>статистика</b> - статистика по месяцам\n")
-													.append("<b>платежи</b> - история платежей\n")
-													.append("<b>тарифы</b> - заданные тарифы\n")
-													.append("<b>изменить тарифы</b> - изменить заданные тарифы\n")
-													.append("<b>начальные показания</b> - изменить начальные показания\n")
-													.append("<b>удалить платеж</b> - удалить платеж за месяц\n")
-													.append("<b>удалить все</b> - удалить все данные об аренде")
-													.toString();
-										} else {
-											buttons.add(getButtonsList("add month"));
-											buttons.add(getButtonsList(
-													"details", "payments"));
-											buttons.add(getButtonsList("rates",
-													"change rates"));
-											buttons.add(getButtonsList("new primary"));
-											buttons.add(getButtonsList(
-													"remove payment",
-													"remove rent"));
-											answer = new StringBuilder()
-													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
-													.append("add month (/rent_add) - add month of rent\n")
-													.append("details (/getstatbymonth) - getting rent statistics by month\n")
-													.append("payments (/gethistory) - return total amount by months\n")
-													.append("rates (/getrates) - return all rates for rent\n")
-													.append("change rates (/changerates) - change rates for rent\n")
-													.append("new primary (/setprimarycounters)- edit starting indications\n")
-													.append("remove payment (/delmonthstat) - remove statistics by month\n")
-													.append("remove rent (/purge) - remove statistics for all months of rent and primary values")
-													.toString();
-										}
-									} else {
-										if (isRus) {
-											buttons.add(getButtonsList("добавить месяц"));
-											buttons.add(getButtonsList(
-													"тарифы", "изменить тарифы"));
-											buttons.add(getButtonsList("начальные показания"));
-											answer = new StringBuilder()
-													.append("Вы можете использовать следующие команды:\n\n")
-													.append("<b>добавить месяц</b> - новый месяц аренды\n")
-													.append("<b>тарифы</b> - просмотр тарифов\n")
-													.append("<b>изменить тарифы</b>- изменить тарифы\n")
-													.append("<b>начальные показания</b> - изменить начальные показания счетиков и стоимость аренды")
-													.toString();
-										} else {
-											buttons.add(getButtonsList("add month"));
-											buttons.add(getButtonsList("rates",
-													"change rates"));
-											buttons.add(getButtonsList("new primary"));
-											answer = new StringBuilder()
-													.append("You can control your rent by sending these commands (Use buttons below):\n\n")
-													.append("add month (/rent_add) - add month of rent\n")
-													.append("rates (/getrates) - return all rates for rent\n")
-													.append("change rates (/changerates) - change rates for rent\n")
-													.append("new primary (/setprimarycounters)- edit starting indications")
-													.toString();
-										}
-									}
-
-								} else {
-									if (isRus) {
-
-										buttons.add(getButtonsList("начальные показания"));
-
-										answer = new StringBuilder()
-												.append("Привет новый пользователь! Задайте начальные показания для доступа ко всем функциям.\n\nИспользуйте команду:\n\n")
-												.append("<b>начальные показания</b> - задать начальные показания счетиков и стоимость аренды")
-												.toString();
-									} else {
-										buttons.add(getButtonsList("new primary"));
-
-										answer = new StringBuilder()
-												.append("Hi new user! For access to all functions for control your rent you must set primary counters. Please use this command:\n")
-												.append("new primary (/setprimarycounters)- set starting indications")
-												.toString();
-									}
-								}
-
-								rh.setNeedReplyMarkup(true);
-								rh.setReplyMarkup(objectMapper
-										.writeValueAsString(getButtons(buttons)));
-
-								if (rentData.containsKey(id)) {
-									rentData.remove(id);
-								}
+								answer = getRentMenu(id, isRus, rh);
 							}
 								break;
 							case "/rent_add": {
@@ -700,18 +598,14 @@ public class MessagesChecker implements Runnable {
 								List<List<String>> buttons = new ArrayList<>();
 								int size = water.getHotWater().size();
 								if (size > 1) {
-									water.getHotWater()
-											.entrySet()
-											.stream()
-											.forEach(
-													e -> {
-														buttons.add(getButtonsList((isRus) ? "горячая-"
-																+ e.getValue()
-																		.getAlias()
-																: "hot-"
-																		+ e.getValue()
-																				.getAlias()));
-													});
+									for (Entry<Integer, WaterHolder> e : water
+											.getHotWater().entrySet()) {
+										buttons.add(getButtonsList((isRus) ? "горячая-"
+												+ e.getValue().getAlias()
+												: "hot-"
+														+ e.getValue()
+																.getAlias()));
+									}
 								} else {
 									if (size == 1) {
 										buttons.add(getButtonsList((isRus) ? "горячая"
@@ -721,19 +615,14 @@ public class MessagesChecker implements Runnable {
 								size = water.getColdWater().size();
 
 								if (size > 1) {
-									water.getColdWater()
-											.entrySet()
-											.stream()
-											.forEach(
-													e -> {
-														buttons.add(getButtonsList((isRus) ? "холодная-"
-																+ e.getValue()
-																		.getAlias()
-																: "cold-"
-																		+ e.getValue()
-																				.getAlias()));
-													});
-
+									for (Entry<Integer, WaterHolder> e : water
+											.getColdWater().entrySet()) {
+										buttons.add(getButtonsList((isRus) ? "холодная-"
+												+ e.getValue().getAlias()
+												: "cold-"
+														+ e.getValue()
+																.getAlias()));
+									}
 								} else {
 									if (size == 1) {
 										buttons.add(getButtonsList((isRus) ? "холодная"
@@ -759,13 +648,13 @@ public class MessagesChecker implements Runnable {
 							case "/setprimarycounters": {
 								defaultPrimaryButtons(rh, isRus);
 								answer = (isRus) ? new StringBuilder()
-										.append("Вы можете использовать следующие команды:\n\n")
+										.append("На данных показаниях будут строиться дальнейшие расчеты аренды.\nВы можете использовать следующие команды:\n\n")
 										.append("<b>вода</b> - задать начальные показания счетчиков воды\n")
 										.append("<b>арендная плата</b> - задать сумму аренды\n")
 										.append("<b>свет</b> - задать начальные показания счетчика света")
 										.toString()
 										: new StringBuilder()
-												.append("You can set next primary counters via follows commands:\n\n")
+												.append("In these indications will be built further lease payments.\nYou can set next primary counters via follows commands:\n\n")
 												.append("set water (/setprimarywater) - set primary counters for water\n")
 												.append("set rent amount (/setprimaryrentamount) - set rent amount per month\n")
 												.append("set light (/setprimarylight) - set primary counters for light")
@@ -834,11 +723,8 @@ public class MessagesChecker implements Runnable {
 
 					}
 				} catch (Exception e) {
-					callApiGet(
-							"sendMessage?chat_id="
-									+ id
-									+ "&text=Oops error! Wrong operation! Say my daddy to see log. For check format use command /start.)",
-							this.telegramApiUrl);
+					callApiGet("sendMessage?chat_id=" + id + "&text="
+							+ getRentMenu(id, isRus, rh), this.telegramApiUrl);
 					if (rentData.containsKey(id)) {
 						rentData.remove(id);
 					}
@@ -1518,7 +1404,7 @@ public class MessagesChecker implements Runnable {
 							buttons.add(getButtonsList("back"));
 							buttons.add(getButtonsList("main menu"));
 						}
-						
+
 						cacheButtons.put(idChat, buttons);
 
 						rh.setNeedReplyMarkup(true);
@@ -1579,6 +1465,9 @@ public class MessagesChecker implements Runnable {
 
 					if (null != existCounters) {
 						List<List<String>> buttons = new ArrayList<>();
+						if (existCounters == 0) {
+							++existCounters;
+						}
 						buttons.add(getButtonsList(existCounters.toString()));
 						rh.setNeedReplyMarkup(true);
 						try {
@@ -1727,10 +1616,6 @@ public class MessagesChecker implements Runnable {
 									}
 								}
 							}
-
-							// Integer lastKey = ((NavigableMap<Integer,
-							// WaterHolder>) pwh
-							// .getHotWater()).lastKey();
 
 							String existAlias = pwh.getHotWater().get(lastKey)
 									.getAlias();
@@ -1972,9 +1857,6 @@ public class MessagesChecker implements Runnable {
 									}
 								}
 							}
-							// Integer lastKey = ((NavigableMap<Integer,
-							// WaterHolder>) pwh
-							// .getColdWater()).lastKey();
 
 							String existAlias = pwh.getColdWater().get(lastKey)
 									.getAlias();
@@ -2206,29 +2088,10 @@ public class MessagesChecker implements Runnable {
 												objectMapper
 														.writeValueAsString(pwh),
 												"water", idChat, owner);
-
-								String lastIndications = DataBaseHelper
-										.getInstance().getFirstValue(
-												"rent_const",
-												"last_indications",
-												Filters.eq("id_chat", idChat));
-
-								if (null != lastIndications) {
-									LastIndicationsHolder last = objectMapper
-											.readValue(lastIndications,
-													LastIndicationsHolder.class);
-									last.setColdWater(pwh.getColdWater());
-									last.setHotWater(pwh.getHotWater());
-									DataBaseHelper.getInstance().updateField(
-											"rent_const",
-											idChat,
-											"last_indications",
-											objectMapper
-													.writeValueAsString(last));
-								}
 							} catch (IOException e) {
 								logger.error(e.getMessage(), e);
 							}
+
 							defaultPrimaryButtons(rh, isRus);
 							chatObjectMapper.remove(idChat);
 							isRemoveCommand = true;
@@ -2239,11 +2102,13 @@ public class MessagesChecker implements Runnable {
 
 						try {
 							countCounters = Integer.valueOf(text);
-
+							if (countCounters < 0) {
+								countCounters = 0;
+							}
 							if (countCounters == 0) {
 
-								String hot = "hot";
-								String cold = "cold";
+								String hot = (isRus) ? "горячая" : "hot";
+								String cold = (isRus) ? "холодная" : "cold";
 
 								switch (pwh.getTypeOfWater()) {
 								case "hot":
@@ -2254,11 +2119,8 @@ public class MessagesChecker implements Runnable {
 									break;
 								case "cold":
 								case "холодная":
-									pwh.setColdWater();
-									pwh.setCountHotWaterCounter(0);
-									cold = getEmoji("E29C85") + " " + cold;
-									break;
-
+									return (isRus) ? "Счетчик холодной воды обязателен"
+											: "counter of cold water must be one minimum";
 								default:
 									break;
 								}
@@ -2278,8 +2140,54 @@ public class MessagesChecker implements Runnable {
 								pwh.setWaterSet(false);
 								pwh.setTypeOfWater(null);
 
-								return answer = (isRus) ? "Показания горячей воды заданы успешно"
+								answer = (isRus) ? "Показания горячей воды заданы успешно"
 										: "Indications for hot water set successfully";
+
+								// check finish set
+								if (pwh.isSetWaterIndications()
+										&& !pwh.isWaitValue()) {
+									buttons = new ArrayList<>();
+									List<String> names = new ArrayList<>();
+									String[] temp = {};
+
+									if (pwh.getCountHotWaterCounter() > 0) {
+										names.add((isRus) ? "горячая" : "hot");
+									} else {
+										pwh.setHotWaterRate(0.0);
+									}
+
+									if (pwh.getCountColdWaterCounter() > 0) {
+										names.add((isRus) ? "холодная" : "cold");
+									} else {
+										pwh.setColdWaterRate(0.0);
+									}
+
+									names.add((isRus) ? "водоотведение"
+											: "outfall rate");
+
+									buttons.add(getButtonsList(names
+											.toArray(temp)));
+									buttons.add(getButtonsList((isRus) ? "главное меню"
+											: "main menu"));
+
+									cacheButtons.put(idChat, buttons);
+
+									rh.setNeedReplyMarkup(true);
+									try {
+										rh.setReplyMarkup(objectMapper
+												.writeValueAsString(getButtons(buttons)));
+									} catch (JsonProcessingException e) {
+
+										logger.error(e.getMessage(), e);
+									}
+
+									answer = (isRus) ? "Показания горячей и холодной воды заданы. Теперь необходимо задать тарифы"
+											: "Indications for cold and hot water set successfully! Set rates for it";
+									pwh.setRatesSet(true);
+									pwh.setTypeOfWater("rate");
+								}
+
+								return answer;
 							}
 
 							if (countCounters > 5) {
@@ -2373,7 +2281,12 @@ public class MessagesChecker implements Runnable {
 			PrimaryLightHolder lightObj = (PrimaryLightHolder) chatObjectMapper
 					.get(idChat);
 			if (null == lightObj.getTariffType()) {
-				lightObj.setTariffType(Integer.valueOf(text));
+				try {
+					lightObj.setTariffType(Integer.valueOf(text));
+				} catch (NumberFormatException e) {
+					return (isRus) ? "Не верный тип счетчика. Используйте кнопки ниже"
+							: "Bad type of counter! Use buttons below";
+				}
 				switch (text) {
 				case "1":
 					hideKeybord(rh);
@@ -2455,48 +2368,55 @@ public class MessagesChecker implements Runnable {
 					break;
 				}
 				default:
-					break;
+					lightObj.setTariffType(null);
+					return (isRus) ? "Не верный тип счетчика. Используйте кнопки ниже"
+							: "Bad type of counter! Use buttons below";
+
 				}
 			} else {
 
 				Integer tariffType = lightObj.getTariffType();
 				Map<String, Double> rates = lightObj.getRates();
 
-				List<String> periodsStr = new ArrayList<>();
+				if (tariffType > 1) {
+					List<String> periodsStr = new ArrayList<>();
 
-				if (isRus) {
-					PeriodsRus[] periods = PrimaryLightHolder.PeriodsRus
-							.values();
-					for (PeriodsRus period : periods) {
-						periodsStr.add(period.name().toLowerCase());
-					}
-				} else {
-					Periods[] periods = PrimaryLightHolder.Periods.values();
-					for (Periods period : periods) {
-						periodsStr.add(period.name().toLowerCase());
-					}
-				}
-
-				if (periodsStr.contains(text)) {
-					lightObj.setPeriod(text);
-					hideKeybord(rh);
 					if (isRus) {
-						return (lightObj.getRates() == null) ? new StringBuilder(
-								"Задайте начальное значение для периода ")
-								.append(text).toString() : new StringBuilder(
-								"Задайте значение тарифа для периода ").append(
-								text).toString();
+						PeriodsRus[] periods = PrimaryLightHolder.PeriodsRus
+								.values();
+						for (PeriodsRus period : periods) {
+							periodsStr.add(period.name().toLowerCase());
+						}
 					} else {
-						return (lightObj.getRates() == null) ? new StringBuilder(
-								"Ok. Set start indication value for ")
-								.append(text).append(" period").toString()
-								: new StringBuilder("Ok. Set rate value for ")
-										.append(text).append(" period")
-										.toString();
+						Periods[] periods = PrimaryLightHolder.Periods.values();
+						for (Periods period : periods) {
+							periodsStr.add(period.name().toLowerCase());
+						}
+					}
+
+					if (periodsStr.contains(text)) {
+						lightObj.setPeriod(text);
+						hideKeybord(rh);
+						if (isRus) {
+							return (lightObj.getRates() == null) ? new StringBuilder(
+									"Задайте начальное значение для периода ")
+									.append(text).toString()
+									: new StringBuilder(
+											"Задайте значение тарифа для периода ")
+											.append(text).toString();
+						} else {
+							return (lightObj.getRates() == null) ? new StringBuilder(
+									"Ok. Set start indication value for ")
+									.append(text).append(" period").toString()
+									: new StringBuilder(
+											"Ok. Set rate value for ")
+											.append(text).append(" period")
+											.toString();
+						}
 					}
 				}
-
-				if (null != tariffType && rates == null) {
+				if (null != tariffType && rates == null
+						&& (null != lightObj.getPeriod() || tariffType == 1)) {
 
 					switch (lightObj.getTariffType()) {
 					case 1:
@@ -2597,6 +2517,7 @@ public class MessagesChecker implements Runnable {
 							answer = (isRus) ? "Начальные показания электроэнергии заданы успешно. Теперь необходимо задать тарифы для периодов"
 									: "Primary start indications set successfully! Please set rates for it";
 							lightObj.initRates();
+							lightObj.setPeriod(null);
 							cacheButtons.put(idChat, buttons);
 						}
 						break;
@@ -2604,7 +2525,8 @@ public class MessagesChecker implements Runnable {
 					default:
 						break;
 					}
-				} else if (null != rates) {
+				} else if (null != rates
+						&& (null != lightObj.getPeriod() || tariffType == 1)) {
 
 					switch (lightObj.getTariffType()) {
 					case 1:
@@ -2662,25 +2584,6 @@ public class MessagesChecker implements Runnable {
 												objectMapper
 														.writeValueAsString(lightObj),
 												"light", idChat, owner);
-
-								String lastIndications = DataBaseHelper
-										.getInstance().getFirstValue(
-												"rent_const",
-												"last_indications",
-												Filters.eq("id_chat", idChat));
-
-								if (null != lastIndications) {
-									LastIndicationsHolder last = objectMapper
-											.readValue(lastIndications,
-													LastIndicationsHolder.class);
-									last.setLight(lightObj.getIndications());
-									DataBaseHelper.getInstance().updateField(
-											"rent_const",
-											idChat,
-											"last_indications",
-											objectMapper
-													.writeValueAsString(last));
-								}
 							} catch (IOException e) {
 								logger.error(e.getMessage(), e);
 							}
@@ -2695,13 +2598,16 @@ public class MessagesChecker implements Runnable {
 						break;
 					}
 
+				} else {
+					return (isRus) ? "Выбран не верный период. Используйте кнопки ниже"
+							: "Wrong period! Use buttons below";
 				}
 			}
 		}
 			break;
 		default:
-			answer = (isRus) ? "Я не могу ответить на этот вопрос("
-					: "Sorry, i can't answer to this message(";
+			answer = (isRus) ? "Я не могу ответить на этот вопрос"
+					: "Sorry, i can't answer to this message";
 			break;
 		}
 
@@ -2904,5 +2810,110 @@ public class MessagesChecker implements Runnable {
 	private String NaN(boolean isRus) {
 		return (isRus) ? "Неверный формат! Значение должно быть числом. Попробуйте снова"
 				: "Wrong format! Value must be a number! Try again";
+	}
+
+	private String getRentMenu(String id, boolean isRus, ResponseHolder rh) {
+
+		String answer = null;
+
+		cacheButtons.remove(id);
+		List<List<String>> buttons = new ArrayList<>();
+
+		if (DataBaseHelper.getInstance().existRentUser(id)) {
+
+			if (DataBaseHelper.getInstance().existPayment(id)) {
+				if (isRus) {
+					buttons.add(getButtonsList("добавить месяц"));
+					buttons.add(getButtonsList("статистика", "платежи"));
+					buttons.add(getButtonsList("тарифы", "изменить тарифы"));
+					buttons.add(getButtonsList("удалить платеж", "удалить все"));
+					buttons.add(getButtonsList("изменить начальные показания"));
+					answer = new StringBuilder()
+							.append("Вы можете использовать следующий команды:\n\n")
+							.append("<b>добавить месяц</b> - новый месяц аренды\n")
+							.append("<b>статистика</b> - статистика по месяцам\n")
+							.append("<b>платежи</b> - история платежей\n")
+							.append("<b>тарифы</b> - заданные тарифы\n")
+							.append("<b>изменить тарифы</b> - изменить заданные тарифы\n")
+							.append("<b>удалить платеж</b> - удалить платеж за месяц\n")
+							.append("<b>удалить все</b> - удалить все данные об аренде")
+							.append("<b>изменить начальные показания</b> - изменить начальные показания счетчиков или стоимость аренды\n")
+							.toString();
+				} else {
+					buttons.add(getButtonsList("add month"));
+					buttons.add(getButtonsList("details", "payments"));
+					buttons.add(getButtonsList("rates", "change rates"));
+					buttons.add(getButtonsList("remove payment", "remove rent"));
+					buttons.add(getButtonsList("change primary"));
+					answer = new StringBuilder()
+							.append("You can control your rent by sending these commands (Use buttons below):\n\n")
+							.append("add month (/rent_add) - add month of rent\n")
+							.append("details (/getstatbymonth) - getting rent statistics by month\n")
+							.append("payments (/gethistory) - return total amount by months\n")
+							.append("rates (/getrates) - return all rates for rent\n")
+							.append("change rates (/changerates) - change rates for rent\n")
+							.append("remove payment (/delmonthstat) - remove statistics by month\n")
+							.append("remove rent (/purge) - remove statistics for all months of rent and primary values")
+							.append("change primary (/setprimarycounters)- edit starting indications\n")
+							.toString();
+				}
+			} else {
+				if (isRus) {
+					buttons.add(getButtonsList("добавить месяц"));
+					buttons.add(getButtonsList("тарифы", "изменить тарифы"));
+					buttons.add(getButtonsList("изменить начальные показания"));
+					answer = new StringBuilder()
+							.append("Вы можете использовать следующие команды:\n\n")
+							.append("<b>добавить месяц</b> - новый месяц аренды\n")
+							.append("<b>тарифы</b> - просмотр тарифов\n")
+							.append("<b>изменить тарифы</b>- изменить тарифы\n")
+							.append("<b>изменить начальные показания</b> - изменить начальные показания счетиков или стоимость аренды")
+							.toString();
+				} else {
+					buttons.add(getButtonsList("add month"));
+					buttons.add(getButtonsList("rates", "change rates"));
+					buttons.add(getButtonsList("change primary"));
+					answer = new StringBuilder()
+							.append("You can control your rent by sending these commands (Use buttons below):\n\n")
+							.append("add month (/rent_add) - add month of rent\n")
+							.append("rates (/getrates) - return all rates for rent\n")
+							.append("change rates (/changerates) - change rates for rent\n")
+							.append("change primary (/setprimarycounters)- edit starting indications")
+							.toString();
+				}
+			}
+
+		} else {
+			if (isRus) {
+
+				buttons.add(getButtonsList("начальные показания"));
+
+				answer = new StringBuilder()
+						.append("Задайте начальные показания для доступа ко всем функциям.\n\nИспользуйте команду:\n\n")
+						.append("<b>начальные показания</b> - задать начальные показания счетиков и стоимость аренды")
+						.toString();
+			} else {
+				buttons.add(getButtonsList("new primary"));
+
+				answer = new StringBuilder()
+						.append("For access to all functions for control your rent you must set primary counters. Please use this command:\n")
+						.append("new primary (/setprimarycounters)- set starting indications")
+						.toString();
+			}
+		}
+
+		rh.setNeedReplyMarkup(true);
+		try {
+			rh.setReplyMarkup(objectMapper
+					.writeValueAsString(getButtons(buttons)));
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		if (rentData.containsKey(id)) {
+			rentData.remove(id);
+		}
+
+		return answer;
 	}
 }

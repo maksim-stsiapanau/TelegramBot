@@ -37,6 +37,6 @@ public class Main {
 		ScheduledExecutorService scheduleEx = Executors
 				.newSingleThreadScheduledExecutor();
 		scheduleEx.scheduleAtFixedRate(new MessagesChecker(telegramApiUrl), 0,
-				2, TimeUnit.SECONDS);
+				1200, TimeUnit.MILLISECONDS);
 	}
 }

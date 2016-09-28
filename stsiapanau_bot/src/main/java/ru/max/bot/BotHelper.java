@@ -54,6 +54,7 @@ public class BotHelper {
 		commandMapper.put("change rates", "/changerates");
 		commandMapper.put("add month", "/rent_add");
 		commandMapper.put("new primary", "/setprimarycounters");
+		commandMapper.put("change primary", "/setprimarycounters");
 		commandMapper.put("name of month", "/setmonth");
 		commandMapper.put("light", "/setlight");
 		commandMapper.put("water", "/setwater");
@@ -81,6 +82,8 @@ public class BotHelper {
 		commandMapperRus.put("изменить тарифы", "/changerates");
 		commandMapperRus.put("добавить месяц", "/rent_add");
 		commandMapperRus.put("начальные показания", "/setprimarycounters");
+		commandMapperRus.put("изменить начальные показания",
+				"/setprimarycounters");
 		commandMapperRus.put("месяц", "/setmonth");
 		commandMapperRus.put("показания света", "/setlight");
 		commandMapperRus.put("показания воды", "/setwater");
@@ -89,11 +92,11 @@ public class BotHelper {
 		commandMapperRus.put("удалить все", "/purge");
 		commandMapperRus.put("удалить платеж", "/delmonthstat");
 		commandMapperRus.put("инфо", "/getstat");
-		commandMapperRus.put("горячая вода", "/changehotwaterrate");
-		commandMapperRus.put("холодная вода", "/changecoldwaterrate");
+		commandMapperRus.put("горячая вода", "/changehwrate");
+		commandMapperRus.put("холодная вода", "/changecwrate");
 		commandMapperRus.put("водоотвод", "/changeoutfallrate");
 		commandMapperRus.put("электричество", "/changelightrate");
-		commandMapperRus.put("сумма аренды", "/changerentamount");
+		commandMapperRus.put("сумма аренды", "/changera");
 
 	}
 
