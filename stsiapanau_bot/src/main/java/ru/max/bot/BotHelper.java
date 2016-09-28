@@ -35,17 +35,18 @@ public class BotHelper {
 			.getName());
 	public static final ObjectMapper objectMapper = new ObjectMapper();
 	public static ConcurrentMap<String, Optional<RentHolder>> rentData = new ConcurrentHashMap<>();
-	public static ConcurrentMap<String, String> activeCommand = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, CommandHolder> activeCommand = new ConcurrentHashMap<>();
 	public static ConcurrentMap<String, String> commandMapper = new ConcurrentHashMap<>();
+	public static ConcurrentMap<String, String> commandMapperRus = new ConcurrentHashMap<>();
 	public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
 	public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
-	
+
 	static {
 		commandMapper.put("set light", "/setprimarylight");
 		commandMapper.put("set water", "/setprimarywater");
 		commandMapper.put("set rent amount", "/setprimaryrentamount");
 		commandMapper.put("rent", "/rent");
-		commandMapper.put("back to rent menu", "/rent");
+		commandMapper.put("main menu", "/rent");
 		commandMapper.put("calc", "/calc");
 		commandMapper.put("home", "/start");
 		commandMapper.put("payments", "/gethistory");
@@ -53,6 +54,7 @@ public class BotHelper {
 		commandMapper.put("change rates", "/changerates");
 		commandMapper.put("add month", "/rent_add");
 		commandMapper.put("new primary", "/setprimarycounters");
+		commandMapper.put("change primary", "/setprimarycounters");
 		commandMapper.put("name of month", "/setmonth");
 		commandMapper.put("light", "/setlight");
 		commandMapper.put("water", "/setwater");
@@ -61,14 +63,44 @@ public class BotHelper {
 		commandMapper.put("remove rent", "/purge");
 		commandMapper.put("remove payment", "/delmonthstat");
 		commandMapper.put("current statistic", "/getstat");
-		commandMapper.put("hot water", "/changehotwaterrate");
-		commandMapper.put("cold water", "/changecoldwaterrate");
+		commandMapper.put("hot water", "/changehwrate");
+		commandMapper.put("cold water", "/changecwrate");
 		commandMapper.put("outfall", "/changeoutfallrate");
 		commandMapper.put("light rate", "/changelightrate");
-		commandMapper.put("rent amount", "/changerentamount");
+		commandMapper.put("rent amount", "/changera");
+
+		// russian language
+		commandMapperRus.put("свет", "/setprimarylight");
+		commandMapperRus.put("вода", "/setprimarywater");
+		commandMapperRus.put("арендная плата", "/setprimaryrentamount");
+		commandMapperRus.put("аренда", "/rent");
+		commandMapperRus.put("главное меню", "/rent");
+		commandMapperRus.put("рассчитать", "/calc");
+		commandMapperRus.put("домой", "/start");
+		commandMapperRus.put("платежи", "/gethistory");
+		commandMapperRus.put("тарифы", "/getrates");
+		commandMapperRus.put("изменить тарифы", "/changerates");
+		commandMapperRus.put("добавить месяц", "/rent_add");
+		commandMapperRus.put("начальные показания", "/setprimarycounters");
+		commandMapperRus.put("изменить начальные показания",
+				"/setprimarycounters");
+		commandMapperRus.put("месяц", "/setmonth");
+		commandMapperRus.put("показания света", "/setlight");
+		commandMapperRus.put("показания воды", "/setwater");
+		commandMapperRus.put("вычет", "/settakeout");
+		commandMapperRus.put("статистика", "/getstatbymonth");
+		commandMapperRus.put("удалить все", "/purge");
+		commandMapperRus.put("удалить платеж", "/delmonthstat");
+		commandMapperRus.put("инфо", "/getstat");
+		commandMapperRus.put("горячая вода", "/changehwrate");
+		commandMapperRus.put("холодная вода", "/changecwrate");
+		commandMapperRus.put("водоотвод", "/changeoutfallrate");
+		commandMapperRus.put("электричество", "/changelightrate");
+		commandMapperRus.put("сумма аренды", "/changera");
+
 	}
 
-	private BotHelper() {
+	public BotHelper() {
 
 	}
 
@@ -144,4 +176,5 @@ public class BotHelper {
 		}
 		return done;
 	}
+
 }

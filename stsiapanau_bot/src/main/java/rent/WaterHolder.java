@@ -1,5 +1,11 @@
 package rent;
 
+/**
+ * Hold information about counter of water
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
 public class WaterHolder {
 
 	private String typeOfWater;

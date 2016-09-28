@@ -3,6 +3,12 @@ package rent;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+/**
+ * Hold info about counter
+ * 
+ * @author Maksim Stepanov
+ * @email maksim.stsiapanau@gmail.com
+ */
 public class Counter {
 
 	private Double rate;
