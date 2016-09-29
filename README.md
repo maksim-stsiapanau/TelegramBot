@@ -1,3 +1,5 @@
 # TelegramBot @ApartmentRent_bot
 
-Calculating rent amount by month. Support flats with no more three-tariff counter of light and any quantity of counters of water (hot or cold)
+Calculating rent including utilities on basis the primary indications of counters and rent amount.
+
+Support English and Russian languages
