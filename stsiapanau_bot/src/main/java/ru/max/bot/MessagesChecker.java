@@ -2270,8 +2270,7 @@ public class MessagesChecker implements Runnable {
 				}
 				defaultPrimaryButtons(rh, isRus);
 			} catch (NumberFormatException e) {
-				answer = NaN(isRus);
-				logger.error(e.getMessage(), e);
+				return NaN(isRus);
 			}
 		}
 			break;
