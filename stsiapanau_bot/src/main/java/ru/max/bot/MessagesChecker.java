@@ -17,6 +17,7 @@ import jackson.bot.message.Message;
 import jackson.bot.message.Result;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -723,8 +724,20 @@ public class MessagesChecker implements Runnable {
 
 					}
 				} catch (Exception e) {
-					callApiGet("sendMessage?chat_id=" + id + "&text="
-							+ getRentMenu(id, isRus, rh), this.telegramApiUrl);
+					StringBuilder sb = new StringBuilder();
+
+					try {
+						sb.append("sendMessage?chat_id=")
+								.append(id)
+								.append("&parse_mode=HTML&text=")
+								.append(URLEncoder
+										.encode(getStart(rh), "UTF-8"))
+								.append("&reply_markup=")
+								.append(rh.getReplyMarkup());
+					} catch (UnsupportedEncodingException e1) {
+						logger.error(e.getMessage(), e);
+					}
+					callApiGet(sb.toString(), this.telegramApiUrl);
 					if (rentData.containsKey(id)) {
 						rentData.remove(id);
 					}
@@ -1332,8 +1345,9 @@ public class MessagesChecker implements Runnable {
 				// check back
 				if ((pwh.getCountColdWaterCounter() != null && pwh
 						.getCountHotWaterCounter() != null)
-						|| (text.equalsIgnoreCase((isRus) ? "горячая" : "hot") && (pwh
-								.getCountHotWaterCounter() != null))
+						|| (text.equalsIgnoreCase((isRus) ? "горячая" : "hot")
+								&& (pwh.getCountHotWaterCounter() != null) && pwh
+								.getCountHotWaterCounter() > 0)
 						|| (text.equalsIgnoreCase((isRus) ? "холодная" : "cold") && (pwh
 								.getCountColdWaterCounter() != null))) {
 
@@ -1617,8 +1631,9 @@ public class MessagesChecker implements Runnable {
 								}
 							}
 
-							String existAlias = pwh.getHotWater().get(lastKey)
-									.getAlias();
+							String existAlias = Optional
+									.ofNullable(pwh.getHotWater().get(lastKey))
+									.orElse(new WaterHolder()).getAlias();
 
 							Double value = null;
 
@@ -2103,7 +2118,8 @@ public class MessagesChecker implements Runnable {
 						try {
 							countCounters = Integer.valueOf(text);
 							if (countCounters < 0) {
-								countCounters = 0;
+								return (isRus) ? "Количество счетчиков горячей воды не может быть отрицательным (минимум 0)"
+										: "Number of counters can not be negative";
 							}
 							if (countCounters == 0) {
 
@@ -2605,9 +2621,8 @@ public class MessagesChecker implements Runnable {
 		}
 			break;
 		default:
-			answer = (isRus) ? "Я не могу ответить на этот вопрос"
-					: "Sorry, i can't answer to this message";
-			break;
+			return (isRus) ? "Я не могу ответить на этот вопрос"
+					: "I can't answer at this question";
 		}
 
 		if (isRemoveCommand) {
@@ -2811,6 +2826,29 @@ public class MessagesChecker implements Runnable {
 				: "Wrong format! Value must be a number! Try again";
 	}
 
+	private String getStart(ResponseHolder rh) {
+
+		List<List<String>> buttons = new ArrayList<>();
+		buttons.add(getButtonsList("rent", "аренда"));
+
+		String answer = new StringBuilder()
+				.append("For english tap rent:\n")
+				.append("<b>rent</b> (/rent) - calculating rent\n\n")
+				.append("Для продолжения на русском языке используйте команду:\n\n")
+				.append("<b>аренда</b> - расчет арендной платы за месяц\n")
+				.toString();
+
+		rh.setNeedReplyMarkup(true);
+		try {
+			rh.setReplyMarkup(objectMapper
+					.writeValueAsString(getButtons(buttons)));
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
+
+		}
+		return answer;
+	}
+
 	private String getRentMenu(String id, boolean isRus, ResponseHolder rh) {
 
 		String answer = null;
@@ -2835,8 +2873,8 @@ public class MessagesChecker implements Runnable {
 							.append("<b>тарифы</b> - заданные тарифы\n")
 							.append("<b>изменить тарифы</b> - изменить заданные тарифы\n")
 							.append("<b>удалить платеж</b> - удалить платеж за месяц\n")
-							.append("<b>удалить все</b> - удалить все данные об аренде")
-							.append("<b>изменить начальные показания</b> - изменить начальные показания счетчиков или стоимость аренды\n")
+							.append("<b>удалить все</b> - удалить все данные об аренде\n")
+							.append("<b>изменить начальные показания</b> - изменить начальные показания счетчиков или стоимость аренды")
 							.toString();
 				} else {
 					buttons.add(getButtonsList("add month"));
@@ -2852,7 +2890,7 @@ public class MessagesChecker implements Runnable {
 							.append("rates (/getrates) - return all rates for rent\n")
 							.append("change rates (/changerates) - change rates for rent\n")
 							.append("remove payment (/delmonthstat) - remove statistics by month\n")
-							.append("remove rent (/purge) - remove statistics for all months of rent and primary values")
+							.append("remove rent (/purge) - remove statistics for all months of rent and primary values\n")
 							.append("change primary (/setprimarycounters)- edit starting indications\n")
 							.toString();
 				}
@@ -2866,7 +2904,7 @@ public class MessagesChecker implements Runnable {
 							.append("<b>добавить месяц</b> - новый месяц аренды\n")
 							.append("<b>тарифы</b> - просмотр тарифов\n")
 							.append("<b>изменить тарифы</b>- изменить тарифы\n")
-							.append("<b>изменить начальные показания</b> - изменить начальные показания счетиков или стоимость аренды")
+							.append("<b>изменить начальные показания</b> - изменить начальные показания счетчиков или стоимость аренды")
 							.toString();
 				} else {
 					buttons.add(getButtonsList("add month"));
@@ -2889,7 +2927,7 @@ public class MessagesChecker implements Runnable {
 
 				answer = new StringBuilder()
 						.append("Задайте начальные показания для доступа ко всем функциям.\n\nИспользуйте команду:\n\n")
-						.append("<b>начальные показания</b> - задать начальные показания счетиков и стоимость аренды")
+						.append("<b>начальные показания</b> - задать начальные показания счетчиков и стоимость аренды")
 						.toString();
 			} else {
 				buttons.add(getButtonsList("new primary"));
