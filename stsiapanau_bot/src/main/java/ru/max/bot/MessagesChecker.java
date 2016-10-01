@@ -1002,23 +1002,24 @@ public class MessagesChecker implements Runnable {
 		}
 			break;
 		case "/delmonthstat":
-			setDefaultRentButtons(rh, isRus);
 			if (DataBaseHelper.getInstance().deleteMothStat(idChat,
 					text.toLowerCase())) {
+				setDefaultRentButtons(rh, isRus);
 				answer = (isRus) ? "Статистика за " + text + " удалена"
 						: "Statistics of " + text + " deleted successfully!";
 			} else {
-				answer = "Can't delete statistics of " + text
-						+ "! Ask my father to see logs(";
+				return (isRus) ? "Запрошенный месяц не найден! Используйте кнопки ниже для выбора месяца"
+						: "Asked a month is not found! Use buttons below for choose a month";
 			}
 			break;
 		case "/getstatbymonth": {
-			setDefaultRentButtons(rh, isRus);
 			answer = DataBaseHelper.getInstance().getStatByMonth(text, idChat,
 					isRus);
 			if (answer.length() == 0) {
-				answer = (isRus) ? "Запрошенный месяц не найден"
-						: "Asked month not found! Try another month!)";
+				return (isRus) ? "Запрошенный месяц не найден! Используйте кнопки ниже для выбора месяца"
+						: "Asked a month is not found! Use buttons below for choose a month";
+			} else {
+				setDefaultRentButtons(rh, isRus);
 			}
 		}
 
