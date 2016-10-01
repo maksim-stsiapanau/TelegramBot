@@ -485,6 +485,18 @@ public class DataBaseHelper {
 		boolean status = true;
 		boolean isLastRecord = false;
 
+		//check exist the month
+		Optional<Document> document = Optional.ofNullable(DataBaseHelper
+				.getInstance().getFirstDocByFilter(
+						"rent_stat",
+						Filters.and(Filters.eq("month", month),
+								Filters.eq("id_chat", idChat))));
+
+		if (!document.isPresent()) {
+			logger.debug("Asked month not found");
+			return false;
+		}
+
 		// check count document -> if == 1 remove all (purge)
 		if (getDocsCount("rent_stat", idChat) == 1) {
 			status = purgeAll(idChat);
@@ -511,8 +523,11 @@ public class DataBaseHelper {
 				DeleteResult dr = this.db.getCollection("rent_stat").deleteOne(
 						Filters.and(Filters.eq("id_chat", idChat),
 								Filters.eq("month", month)));
-				logger.debug("Month %s deleted successfully! Row deleted %s",
-						month, dr.getDeletedCount());
+				if (dr.getDeletedCount() > 0) {
+					logger.debug(
+							"Month %s deleted successfully! Row deleted %s",
+							month, dr.getDeletedCount());
+				}
 
 				if (isLastRecord) {
 					Document lastRecord = this.db.getCollection("rent_stat")
