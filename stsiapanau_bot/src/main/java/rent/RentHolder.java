@@ -102,10 +102,25 @@ public class RentHolder {
 								Double rate = this.waterPrimary
 										.getColdWaterRate();
 
+								Integer lastKey = null;
+
+								if (null != alias) {
+									for (Entry<Integer, WaterHolder> entry : this.lastIndications
+											.getColdWater().entrySet()) {
+										Integer keyEntry = entry.getKey();
+										if (entry.getValue().getAlias()
+												.equalsIgnoreCase(alias)) {
+											lastKey = keyEntry;
+										}
+									}
+								}
+
 								Double used = e.getValue()
 										.getPrimaryIndication()
-										- this.lastIndications.getColdWater()
-												.get(key)
+										- this.lastIndications
+												.getColdWater()
+												.get((lastKey == null) ? key
+														: lastKey)
 												.getPrimaryIndication();
 								Double price = used * rate;
 
@@ -126,10 +141,25 @@ public class RentHolder {
 								Double rate = this.waterPrimary
 										.getHotWaterRate();
 
+								Integer lastKey = null;
+
+								if (null != alias) {
+									for (Entry<Integer, WaterHolder> entry : this.lastIndications
+											.getHotWater().entrySet()) {
+										Integer keyEntry = entry.getKey();
+										if (entry.getValue().getAlias()
+												.equalsIgnoreCase(alias)) {
+											lastKey = keyEntry;
+										}
+									}
+								}
+
 								Double used = e.getValue()
 										.getPrimaryIndication()
-										- this.lastIndications.getHotWater()
-												.get(key)
+										- this.lastIndications
+												.getHotWater()
+												.get((lastKey == null) ? key
+														: lastKey)
 												.getPrimaryIndication();
 								Double price = used * rate;
 
