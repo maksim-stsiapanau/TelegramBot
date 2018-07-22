@@ -1,5 +1,5 @@
 
-package jackson.bot.message;
+package ru.max.bot.model;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,79 +14,79 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("org.jsonschema2pojo")
 @JsonPropertyOrder({
-    "type",
-    "offset",
-    "length"
+    "id",
+    "first_name",
+    "last_name"
 })
-public class Entity {
+public class From {
 
-    @JsonProperty("type")
-    private String type;
-    @JsonProperty("offset")
-    private Integer offset;
-    @JsonProperty("length")
-    private Integer length;
+    @JsonProperty("id")
+    private Integer id;
+    @JsonProperty("first_name")
+    private String firstName;
+    @JsonProperty("last_name")
+    private String lastName;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      * 
      * @return
-     *     The type
+     *     The id
      */
-    @JsonProperty("type")
-    public String getType() {
-        return type;
+    @JsonProperty("id")
+    public Integer getId() {
+        return id;
     }
 
     /**
      * 
-     * @param type
-     *     The type
+     * @param id
+     *     The id
      */
-    @JsonProperty("type")
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    /**
-     * 
-     * @return
-     *     The offset
-     */
-    @JsonProperty("offset")
-    public Integer getOffset() {
-        return offset;
-    }
-
-    /**
-     * 
-     * @param offset
-     *     The offset
-     */
-    @JsonProperty("offset")
-    public void setOffset(Integer offset) {
-        this.offset = offset;
+    @JsonProperty("id")
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     /**
      * 
      * @return
-     *     The length
+     *     The firstName
      */
-    @JsonProperty("length")
-    public Integer getLength() {
-        return length;
+    @JsonProperty("first_name")
+    public String getFirstName() {
+        return firstName;
     }
 
     /**
      * 
-     * @param length
-     *     The length
+     * @param firstName
+     *     The first_name
      */
-    @JsonProperty("length")
-    public void setLength(Integer length) {
-        this.length = length;
+    @JsonProperty("first_name")
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    /**
+     * 
+     * @return
+     *     The lastName
+     */
+    @JsonProperty("last_name")
+    public String getLastName() {
+        return lastName;
+    }
+
+    /**
+     * 
+     * @param lastName
+     *     The last_name
+     */
+    @JsonProperty("last_name")
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     @JsonAnyGetter

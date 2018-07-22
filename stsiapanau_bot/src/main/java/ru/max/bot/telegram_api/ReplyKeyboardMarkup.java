@@ -1,4 +1,4 @@
-package telegram.api;
+package ru.max.bot.telegram_api;
 
 import java.util.List;
 

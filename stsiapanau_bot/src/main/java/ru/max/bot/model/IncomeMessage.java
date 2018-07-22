@@ -1,7 +1,9 @@
 
-package jackson.bot.message;
+package ru.max.bot.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -14,56 +16,56 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("org.jsonschema2pojo")
 @JsonPropertyOrder({
-    "update_id",
-    "message"
+    "ok",
+    "result"
 })
-public class Result {
+public class IncomeMessage {
 
-    @JsonProperty("update_id")
-    private Integer updateId;
-    @JsonProperty("message")
-    private Message message;
+    @JsonProperty("ok")
+    private Boolean ok;
+    @JsonProperty("result")
+    private List<Result> result = new ArrayList<Result>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      * 
      * @return
-     *     The updateId
+     *     The ok
      */
-    @JsonProperty("update_id")
-    public Integer getUpdateId() {
-        return updateId;
+    @JsonProperty("ok")
+    public Boolean getOk() {
+        return ok;
     }
 
     /**
      * 
-     * @param updateId
-     *     The update_id
+     * @param ok
+     *     The ok
      */
-    @JsonProperty("update_id")
-    public void setUpdateId(Integer updateId) {
-        this.updateId = updateId;
+    @JsonProperty("ok")
+    public void setOk(Boolean ok) {
+        this.ok = ok;
     }
 
     /**
      * 
      * @return
-     *     The message
+     *     The result
      */
-    @JsonProperty("message")
-    public Message getMessage() {
-        return message;
+    @JsonProperty("result")
+    public List<Result> getResult() {
+        return result;
     }
 
     /**
      * 
-     * @param message
-     *     The message
+     * @param result
+     *     The result
      */
-    @JsonProperty("message")
-    public void setMessage(Message message) {
-        this.message = message;
+    @JsonProperty("result")
+    public void setResult(List<Result> result) {
+        this.result = result;
     }
 
     @JsonAnyGetter
