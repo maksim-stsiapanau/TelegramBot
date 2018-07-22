@@ -6,3 +6,4 @@
 *.properties
 *.iml
 Maven*.xml
+.idea/*
