@@ -4,3 +4,5 @@
 *.lst
 *.txt
 *.properties
+*.iml
+Maven*.xml
