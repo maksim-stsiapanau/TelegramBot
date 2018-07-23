@@ -42,6 +42,7 @@ public class BotHelper {
     public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
     public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, Pattern> cachePatterns = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String,String> monthForEdit = new ConcurrentHashMap<>();
 
     static {
         commandMapper.put("set light", "/setprimarylight");
@@ -70,6 +71,7 @@ public class BotHelper {
         commandMapper.put("outfall", "/changeoutfallrate");
         commandMapper.put("light rate", "/changelightrate");
         commandMapper.put("rent amount", "/changera");
+        commandMapper.put("edit rent","/change_rent");
 
         // russian language
         commandMapperRus.put("свет", "/setprimarylight");
@@ -99,6 +101,7 @@ public class BotHelper {
         commandMapperRus.put("водоотвод", "/changeoutfallrate");
         commandMapperRus.put("электричество", "/changelightrate");
         commandMapperRus.put("сумма аренды", "/changera");
+        commandMapperRus.put("редактировать", "/change_rent");
 
     }
 

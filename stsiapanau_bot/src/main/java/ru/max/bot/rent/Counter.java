@@ -27,6 +27,11 @@ public class Counter {
     public Counter() {
     }
 
+
+    public Counter recalcCounter(Double rate) {
+        return new Counter(rate, this.used, this.used * rate);
+    }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this,
