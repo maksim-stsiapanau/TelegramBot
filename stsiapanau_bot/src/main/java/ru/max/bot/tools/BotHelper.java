@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +13,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -42,7 +42,7 @@ public class BotHelper {
     public static ConcurrentMap<String, Object> chatObjectMapper = new ConcurrentHashMap<>();
     public static ConcurrentMap<String, List<List<String>>> cacheButtons = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, Pattern> cachePatterns = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<String,String> monthForEdit = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, String> monthForEdit = new ConcurrentHashMap<>();
 
     static {
         commandMapper.put("set light", "/setprimarylight");
@@ -71,7 +71,7 @@ public class BotHelper {
         commandMapper.put("outfall", "/changeoutfallrate");
         commandMapper.put("light rate", "/changelightrate");
         commandMapper.put("rent amount", "/changera");
-        commandMapper.put("edit rent","/change_rent");
+        commandMapper.put("edit rent", "/change_rent");
 
         // russian language
         commandMapperRus.put("свет", "/setprimarylight");
@@ -111,13 +111,19 @@ public class BotHelper {
 
     public static Optional<String> callApiGet(String method, String url) {
 
+        if (url.contains("api.telegram.org")) {
+            url = url.replace("https://api.telegram.org",
+                    "http://62.76.177.30");
+        }
         Optional<String> result = Optional.ofNullable(null);
         BufferedReader in = null;
         URL obj;
 
         try {
+
+
             obj = new URL(url + method);
-            HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
             // optional default is GET
             con.setRequestMethod("GET");
