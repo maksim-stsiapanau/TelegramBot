@@ -1,8 +1,8 @@
 package ru.max.bot.rent;
 
 import lombok.Data;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Hold info about counter
@@ -25,6 +25,11 @@ public class Counter {
     }
 
     public Counter() {
+    }
+
+
+    public Counter recalcCounter(Double rate) {
+        return new Counter(rate, this.used, this.used * rate);
     }
 
     @Override

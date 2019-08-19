@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import ru.max.bot.holders.RatesHolder;
 import ru.max.bot.rent.Counter;
 import ru.max.bot.rent.LastIndicationsHolder;
 import ru.max.bot.rent.PrimaryLightHolder;
@@ -90,6 +91,34 @@ public class DataBaseHelper {
             result = (T) doc.get();
         }
         return result;
+    }
+
+    public RatesHolder getRatesForRecalc(String chatId, ObjectMapper mapper) {
+
+
+        try {
+            Optional<Document> document = Optional.of(this.db
+                    .getCollection("rent_const")
+                    .find(Filters.eq("id_chat", chatId)).first());
+            if (document.isPresent()) {
+
+
+                try {
+                    PrimaryLightHolder plh = mapper.readValue(
+                            (String) document.get().get("light"), PrimaryLightHolder.class);
+
+                    PrimaryWaterHolder pwh = mapper.readValue(
+                            (String) document.get().get("water"), PrimaryWaterHolder.class);
+                    return new RatesHolder(plh, pwh);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+
+            }
+        } catch (Exception e) {
+            logger.error("Can't get rates month! Error: %s", e.getMessage(), e);
+        }
+        return null;
     }
 
     /**
@@ -169,265 +198,274 @@ public class DataBaseHelper {
                             "rent_stat",
                             Filters.and(Filters.eq("month", month),
                                     Filters.eq("id_chat", idChat))));
-            document.ifPresent(doc -> {
+            if (document.isPresent()) {
 
                 try {
                     RentMonthHolder rentHolder = objectMapper.readValue(
-                            (String) doc.get("stat"), RentMonthHolder.class);
+                            (String) document.get().get("stat"), RentMonthHolder.class);
 
-                    LastIndicationsHolder lastData = rentHolder
-                            .getLastIndications();
-
-                    Map<String, Double> lightLast = lastData.getLight();
-
-                    sb.append((isRus) ? "<b>Автор:</b> " : "<b>Added by:</b> ")
-                            .append(rentHolder.getOwner())
-                            .append((isRus) ? "\n<b>Месяц:</b> "
-                                    : "\n<b>Month:</b> ")
-                            .append(rentHolder.getMonth())
-                            .append((isRus) ? "\n<b>Конечная стоимость аренды:</b> "
-                                    : "\n<b>Final amount:</b> ")
-                            .append(String.format("%.2f",
-                                    rentHolder.getTotalAmount()))
-                            .append((isRus) ? " руб" : " rub")
-                            .append((isRus) ? "\n\n<b>Электричество</b>\n"
-                                    : "\n\n<b>Light</b>\n");
-
-                    rentHolder
-                            .getLight()
-                            .entrySet()
-                            .stream()
-                            .forEach(
-                                    e -> {
-                                        sb.append("<b>" + e.getKey() + "</b>")
-                                                .append((isRus) ? " - показание: "
-                                                        : " - indication: ")
-                                                .append(String.format("%.2f",
-                                                        lightLast.get(e
-                                                                .getKey())))
-                                                .append((isRus) ? "; использовано: "
-                                                        : "; used: ")
-                                                .append(String.format("%.2f", e
-                                                        .getValue().getUsed()))
-                                                .append((isRus) ? "; стоимость: "
-                                                        : "; price: ")
-                                                .append(String.format("%.2f", e
-                                                        .getValue().getPrice()))
-                                                .append((isRus) ? " руб; тариф: "
-                                                        : " rub; rate: ")
-                                                .append(String.format("%.2f", e
-                                                        .getValue().getRate()))
-                                                .append((isRus) ? " руб"
-                                                        : " rub").append("\n");
-                                    });
-
-                    if (rentHolder.getLight().size() > 0) {
-                        Double totalLigDoublePrice = rentHolder.getLight().entrySet().stream().map(e -> e.getValue().getPrice()).reduce(0.0, Double::sum);
-                        sb.append((isRus) ? "<b>Общая стоимость света:</b> " : "<b>Total price for light:</b> ").append((String.format("%.2f", totalLigDoublePrice))).append((isRus) ? " руб"
-                                : " rub").append("\n");
-                    }
-
-
-                    int sizeColdWater = rentHolder.getColdWater().size();
-                    int sizeHotWater = rentHolder.getHotWater().size();
-
-                    if (sizeColdWater > 0) {
-                        sb.append((isRus) ? "\n<b>Холодная вода</b>"
-                                : "\n<b>Cold water</b>");
-                        rentHolder
-                                .getColdWater()
-                                .entrySet()
-                                .stream()
-                                .forEach(
-                                        e -> {
-
-                                            sb.append("\n");
-                                            Optional<String> alias = Optional
-                                                    .ofNullable(e.getValue()
-                                                            .getAlias());
-
-                                            Double lastIndication = null;
-                                            int size = lastData.getColdWater()
-                                                    .size();
-                                            if (size == 1) {
-                                                lastIndication = lastData
-                                                        .getColdWater().get(1)
-                                                        .getPrimaryIndication();
-                                            } else {
-                                                for (Entry<Integer, WaterHolder> entry : lastData
-                                                        .getColdWater()
-                                                        .entrySet()) {
-
-                                                    WaterHolder wh = entry
-                                                            .getValue();
-
-                                                    if (alias.get().equals(
-                                                            wh.getAlias())) {
-                                                        lastIndication = wh
-                                                                .getPrimaryIndication();
-                                                    }
-                                                }
-                                            }
-
-                                            if (alias.isPresent()) {
-                                                sb.append(
-                                                        "<b>" + alias.get()
-                                                                + "</b>")
-                                                        .append(" - ");
-
-                                            }
-
-                                            sb.append(
-                                                    (isRus) ? "показание: "
-                                                            : "indication: ")
-                                                    .append(String.format(
-                                                            "%.2f",
-                                                            lastIndication))
-                                                    .append((isRus) ? "; использовано: "
-                                                            : "; used: ")
-                                                    .append(String.format(
-                                                            "%.2f", e
-                                                                    .getValue()
-                                                                    .getUsed()))
-                                                    .append((isRus) ? "; стоимость: "
-                                                            : "; price: ")
-                                                    .append(String
-                                                            .format("%.2f", e
-                                                                    .getValue()
-                                                                    .getPrice()))
-                                                    .append((isRus) ? " руб; тариф: "
-                                                            : " rub; rate: ")
-                                                    .append(String.format(
-                                                            "%.2f", e
-                                                                    .getValue()
-                                                                    .getRate()))
-                                                    .append((isRus) ? " руб"
-                                                            : " rub");
-                                        });
-                    }
-
-                    if (sizeHotWater > 0) {
-                        sb.append((isRus) ? "\n\n<b>Горячая вода</b>"
-                                : "\n\n<b>Hot water</b>");
-                        rentHolder
-                                .getHotWater()
-                                .entrySet()
-                                .stream()
-                                .forEach(
-                                        e -> {
-                                            sb.append("\n");
-                                            Optional<String> alias = Optional
-                                                    .ofNullable(e.getValue()
-                                                            .getAlias());
-
-                                            if (alias.isPresent()) {
-                                                sb.append(
-                                                        "<b>" + alias.get()
-                                                                + "</b>")
-                                                        .append(" - ");
-                                            }
-
-                                            Double lastIndication = null;
-                                            int size = lastData.getHotWater()
-                                                    .size();
-                                            if (size == 1) {
-                                                lastIndication = lastData
-                                                        .getHotWater().get(1)
-                                                        .getPrimaryIndication();
-                                            } else {
-                                                for (Entry<Integer, WaterHolder> entry : lastData
-                                                        .getHotWater()
-                                                        .entrySet()) {
-
-                                                    WaterHolder wh = entry
-                                                            .getValue();
-
-                                                    if (alias.get().equals(
-                                                            wh.getAlias())) {
-                                                        lastIndication = wh
-                                                                .getPrimaryIndication();
-                                                    }
-                                                }
-                                            }
-                                            sb.append(
-                                                    (isRus) ? "показание: "
-                                                            : "indication: ")
-                                                    .append(String.format(
-                                                            "%.2f",
-                                                            lastIndication))
-                                                    .append((isRus) ? "; использовано: "
-                                                            : "; used: ")
-                                                    .append(String.format(
-                                                            "%.2f", e
-                                                                    .getValue()
-                                                                    .getUsed()))
-                                                    .append((isRus) ? "; стоимость: "
-                                                            : "; price: ")
-                                                    .append(String
-                                                            .format("%.2f", e
-                                                                    .getValue()
-                                                                    .getPrice()))
-                                                    .append((isRus) ? " руб; тариф: "
-                                                            : " rub; rate: ")
-                                                    .append(String.format(
-                                                            "%.2f", e
-                                                                    .getValue()
-                                                                    .getRate()))
-                                                    .append((isRus) ? " руб"
-                                                            : " rub");
-                                        });
-
-                    }
-
-                    Optional<Counter> outfall = Optional.ofNullable(rentHolder
-                            .getOutfall());
-
-                    if (outfall.isPresent()) {
-
-                        sb.append(
-                                (isRus) ? "\n\n<b>Водоотвод</b> - количество: "
-                                        : "\n\n<b>Outfall</b> - count: ")
-                                .append(String.format("%.2f", outfall.get()
-                                        .getUsed()))
-                                .append((isRus) ? "; стоимость: " : "; price: ")
-                                .append(String.format("%.2f", outfall.get()
-                                        .getPrice()))
-                                .append((isRus) ? " руб; тариф: "
-                                        : " rub; rate: ")
-                                .append(String.format("%.2f", outfall.get()
-                                        .getRate()))
-                                .append((isRus) ? " руб" : " rub");
-
-                    }
-
-                    sb.append(
-                            (isRus) ? "\n\n<b>Стоимость аренды:</b> "
-                                    : "\n\n<b>Rent Amount:</b> ")
-                            .append(String.format("%.2f",
-                                    rentHolder.getRentAmount()))
-                            .append((isRus) ? " руб" : " rub");
-
-                    if (null != rentHolder.getTakeout()) {
-                        sb.append(
-                                (isRus) ? "\n<b>Вычет:</b> "
-                                        : "\n<b>Takeout:</b> ")
-                                .append(String.format("%.2f",
-                                        rentHolder.getTakeout()))
-                                .append((isRus) ? " руб" : " rub")
-                                .append(" - ")
-                                .append(rentHolder.getTakeoutDesc());
-                    }
-
+                    return getStatisticByMonth(rentHolder, isRus);
                 } catch (Exception e1) {
                     logger.error(e1.getMessage(), e1);
                 }
 
-            });
+            }
         } catch (Exception e) {
             logger.error("Can't get stat by month! Error: %s", e.getMessage(),
                     e);
             logger.error("Month: %s;", month);
         }
+        return sb.toString();
+    }
+
+
+    public String getStatisticByMonth(RentMonthHolder rentHolder, boolean isRus) {
+
+        StringBuilder sb = new StringBuilder();
+
+        LastIndicationsHolder lastData = rentHolder
+                .getLastIndications();
+
+        Map<String, Double> lightLast = lastData.getLight();
+
+        sb.append((isRus) ? "<b>Автор:</b> " : "<b>Added by:</b> ")
+                .append(rentHolder.getOwner())
+                .append((isRus) ? "\n<b>Месяц:</b> "
+                        : "\n<b>Month:</b> ")
+                .append(rentHolder.getMonth())
+                .append((isRus) ? "\n<b>Конечная стоимость аренды:</b> "
+                        : "\n<b>Final amount:</b> ")
+                .append(String.format("%.2f",
+                        rentHolder.getTotalAmount()))
+                .append((isRus) ? " руб" : " rub")
+                .append((isRus) ? "\n\n<b>Электричество</b>\n"
+                        : "\n\n<b>Light</b>\n");
+
+        rentHolder
+                .getLight()
+                .entrySet()
+                .stream()
+                .forEach(
+                        e -> {
+                            sb.append("<b>" + e.getKey() + "</b>")
+                                    .append((isRus) ? " - показание: "
+                                            : " - indication: ")
+                                    .append(String.format("%.2f",
+                                            lightLast.get(e
+                                                    .getKey())))
+                                    .append((isRus) ? "; использовано: "
+                                            : "; used: ")
+                                    .append(String.format("%.2f", e
+                                            .getValue().getUsed()))
+                                    .append((isRus) ? "; стоимость: "
+                                            : "; price: ")
+                                    .append(String.format("%.2f", e
+                                            .getValue().getPrice()))
+                                    .append((isRus) ? " руб; тариф: "
+                                            : " rub; rate: ")
+                                    .append(String.format("%.2f", e
+                                            .getValue().getRate()))
+                                    .append((isRus) ? " руб"
+                                            : " rub").append("\n");
+                        });
+
+        if (rentHolder.getLight().size() > 0) {
+            Double totalLigDoublePrice = rentHolder.getLight().entrySet().stream().map(e -> e.getValue().getPrice()).reduce(0.0, Double::sum);
+            sb.append((isRus) ? "<b>Общая стоимость света:</b> " : "<b>Total price for light:</b> ").append((String.format("%.2f", totalLigDoublePrice))).append((isRus) ? " руб"
+                    : " rub").append("\n");
+        }
+
+
+        int sizeColdWater = rentHolder.getColdWater().size();
+        int sizeHotWater = rentHolder.getHotWater().size();
+
+        if (sizeColdWater > 0) {
+            sb.append((isRus) ? "\n<b>Холодная вода</b>"
+                    : "\n<b>Cold water</b>");
+            rentHolder
+                    .getColdWater()
+                    .entrySet()
+                    .stream()
+                    .forEach(
+                            e -> {
+
+                                sb.append("\n");
+                                Optional<String> alias = Optional
+                                        .ofNullable(e.getValue()
+                                                .getAlias());
+
+                                Double lastIndication = null;
+                                int size = lastData.getColdWater()
+                                        .size();
+                                if (size == 1) {
+                                    lastIndication = lastData
+                                            .getColdWater().get(1)
+                                            .getPrimaryIndication();
+                                } else {
+                                    for (Entry<Integer, WaterHolder> entry : lastData
+                                            .getColdWater()
+                                            .entrySet()) {
+
+                                        WaterHolder wh = entry
+                                                .getValue();
+
+                                        if (alias.get().equals(
+                                                wh.getAlias())) {
+                                            lastIndication = wh
+                                                    .getPrimaryIndication();
+                                        }
+                                    }
+                                }
+
+                                if (alias.isPresent()) {
+                                    sb.append(
+                                            "<b>" + alias.get()
+                                                    + "</b>")
+                                            .append(" - ");
+
+                                }
+
+                                sb.append(
+                                        (isRus) ? "показание: "
+                                                : "indication: ")
+                                        .append(String.format(
+                                                "%.2f",
+                                                lastIndication))
+                                        .append((isRus) ? "; использовано: "
+                                                : "; used: ")
+                                        .append(String.format(
+                                                "%.2f", e
+                                                        .getValue()
+                                                        .getUsed()))
+                                        .append((isRus) ? "; стоимость: "
+                                                : "; price: ")
+                                        .append(String
+                                                .format("%.2f", e
+                                                        .getValue()
+                                                        .getPrice()))
+                                        .append((isRus) ? " руб; тариф: "
+                                                : " rub; rate: ")
+                                        .append(String.format(
+                                                "%.2f", e
+                                                        .getValue()
+                                                        .getRate()))
+                                        .append((isRus) ? " руб"
+                                                : " rub");
+                            });
+        }
+
+        if (sizeHotWater > 0) {
+            sb.append((isRus) ? "\n\n<b>Горячая вода</b>"
+                    : "\n\n<b>Hot water</b>");
+            rentHolder
+                    .getHotWater()
+                    .entrySet()
+                    .stream()
+                    .forEach(
+                            e -> {
+                                sb.append("\n");
+                                Optional<String> alias = Optional
+                                        .ofNullable(e.getValue()
+                                                .getAlias());
+
+                                if (alias.isPresent()) {
+                                    sb.append(
+                                            "<b>" + alias.get()
+                                                    + "</b>")
+                                            .append(" - ");
+                                }
+
+                                Double lastIndication = null;
+                                int size = lastData.getHotWater()
+                                        .size();
+                                if (size == 1) {
+                                    lastIndication = lastData
+                                            .getHotWater().get(1)
+                                            .getPrimaryIndication();
+                                } else {
+                                    for (Entry<Integer, WaterHolder> entry : lastData
+                                            .getHotWater()
+                                            .entrySet()) {
+
+                                        WaterHolder wh = entry
+                                                .getValue();
+
+                                        if (alias.get().equals(
+                                                wh.getAlias())) {
+                                            lastIndication = wh
+                                                    .getPrimaryIndication();
+                                        }
+                                    }
+                                }
+                                sb.append(
+                                        (isRus) ? "показание: "
+                                                : "indication: ")
+                                        .append(String.format(
+                                                "%.2f",
+                                                lastIndication))
+                                        .append((isRus) ? "; использовано: "
+                                                : "; used: ")
+                                        .append(String.format(
+                                                "%.2f", e
+                                                        .getValue()
+                                                        .getUsed()))
+                                        .append((isRus) ? "; стоимость: "
+                                                : "; price: ")
+                                        .append(String
+                                                .format("%.2f", e
+                                                        .getValue()
+                                                        .getPrice()))
+                                        .append((isRus) ? " руб; тариф: "
+                                                : " rub; rate: ")
+                                        .append(String.format(
+                                                "%.2f", e
+                                                        .getValue()
+                                                        .getRate()))
+                                        .append((isRus) ? " руб"
+                                                : " rub");
+                            });
+
+        }
+
+        Optional<Counter> outfall = Optional.ofNullable(rentHolder
+                .getOutfall());
+
+        if (outfall.isPresent()) {
+
+            sb.append(
+                    (isRus) ? "\n\n<b>Водоотвод</b> - количество: "
+                            : "\n\n<b>Outfall</b> - count: ")
+                    .append(String.format("%.2f", outfall.get()
+                            .getUsed()))
+                    .append((isRus) ? "; стоимость: " : "; price: ")
+                    .append(String.format("%.2f", outfall.get()
+                            .getPrice()))
+                    .append((isRus) ? " руб; тариф: "
+                            : " rub; rate: ")
+                    .append(String.format("%.2f", outfall.get()
+                            .getRate()))
+                    .append((isRus) ? " руб" : " rub");
+
+        }
+
+        sb.append(
+                (isRus) ? "\n\n<b>Стоимость аренды:</b> "
+                        : "\n\n<b>Rent Amount:</b> ")
+                .append(String.format("%.2f",
+                        rentHolder.getRentAmount()))
+                .append((isRus) ? " руб" : " rub");
+
+        if (null != rentHolder.getTakeout()) {
+            sb.append(
+                    (isRus) ? "\n<b>Вычет:</b> "
+                            : "\n<b>Takeout:</b> ")
+                    .append(String.format("%.2f",
+                            rentHolder.getTakeout()))
+                    .append((isRus) ? " руб" : " rub")
+                    .append(" - ")
+                    .append(rentHolder.getTakeoutDesc());
+        }
+
         return sb.toString();
     }
 

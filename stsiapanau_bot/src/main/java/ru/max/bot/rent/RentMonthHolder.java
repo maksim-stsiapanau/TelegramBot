@@ -1,6 +1,8 @@
 package ru.max.bot.rent;
 
 import lombok.Data;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -77,6 +79,12 @@ public class RentMonthHolder {
         }
 
         return this.totalAmount;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this,
+                ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 
