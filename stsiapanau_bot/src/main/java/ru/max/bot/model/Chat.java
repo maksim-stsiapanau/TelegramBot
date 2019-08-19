@@ -1,5 +1,5 @@
 
-package jackson.bot.message;
+package ru.max.bot.model;
 
 import java.util.HashMap;
 import java.util.Map;

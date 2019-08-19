@@ -1,20 +1,24 @@
 package ru.max.bot;
 
-import static ru.max.bot.BotHelper.activeCommand;
-import static ru.max.bot.BotHelper.cacheButtons;
-import static ru.max.bot.BotHelper.callApiGet;
-import static ru.max.bot.BotHelper.chatObjectMapper;
-import static ru.max.bot.BotHelper.checkStrByRegexp;
-import static ru.max.bot.BotHelper.commandMapper;
-import static ru.max.bot.BotHelper.commandMapperRus;
-import static ru.max.bot.BotHelper.getEmoji;
-import static ru.max.bot.BotHelper.objectMapper;
-import static ru.max.bot.BotHelper.rentData;
-import jackson.bot.message.Chat;
-import jackson.bot.message.Entity;
-import jackson.bot.message.IncomeMessage;
-import jackson.bot.message.Message;
-import jackson.bot.message.Result;
+import static ru.max.bot.tools.BotHelper.activeCommand;
+import static ru.max.bot.tools.BotHelper.cacheButtons;
+import static ru.max.bot.tools.BotHelper.callApiGet;
+import static ru.max.bot.tools.BotHelper.chatObjectMapper;
+import static ru.max.bot.tools.BotHelper.checkStrByRegexp;
+import static ru.max.bot.tools.BotHelper.commandMapper;
+import static ru.max.bot.tools.BotHelper.commandMapperRus;
+import static ru.max.bot.tools.BotHelper.getEmoji;
+import static ru.max.bot.tools.BotHelper.objectMapper;
+import static ru.max.bot.tools.BotHelper.rentData;
+
+import ru.max.bot.holders.CommandHolder;
+import ru.max.bot.holders.Response;
+import ru.max.bot.holders.ResponseHolder;
+import ru.max.bot.model.Chat;
+import ru.max.bot.model.Entity;
+import ru.max.bot.model.IncomeMessage;
+import ru.max.bot.model.Message;
+import ru.max.bot.model.Result;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,20 +40,20 @@ import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.joda.time.DateTime;
 
-import rent.PrimaryLightHolder;
-import rent.PrimaryLightHolder.Periods;
-import rent.PrimaryLightHolder.PeriodsRus;
-import rent.PrimaryWaterHolder;
-import rent.RentHolder;
-import rent.WaterHolder;
-import telegram.api.KeyboardButton;
-import telegram.api.ReplyKeyboardHide;
-import telegram.api.ReplyKeyboardMarkup;
+import ru.max.bot.rent.PrimaryLightHolder;
+import ru.max.bot.rent.PrimaryLightHolder.Periods;
+import ru.max.bot.rent.PrimaryLightHolder.PeriodsRus;
+import ru.max.bot.rent.PrimaryWaterHolder;
+import ru.max.bot.rent.RentHolder;
+import ru.max.bot.rent.WaterHolder;
+import ru.max.bot.telegram_api.KeyboardButton;
+import ru.max.bot.telegram_api.ReplyKeyboardHide;
+import ru.max.bot.telegram_api.ReplyKeyboardMarkup;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mongodb.client.model.Filters;
 
-import db.DataBaseHelper;
+import ru.max.bot.database.DataBaseHelper;
 
 /**
  * 

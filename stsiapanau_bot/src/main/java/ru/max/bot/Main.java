@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import db.DataBaseHelper;
+import ru.max.bot.database.DataBaseHelper;
 
 /**
  * Telegram bot
